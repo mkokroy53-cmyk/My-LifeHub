@@ -3,7 +3,7 @@ services:
     name: my-lifehub
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py createsuperuser_auto
     startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2
     envVars:
       - key: DEBUG
@@ -20,3 +20,9 @@ services:
         value: config.settings
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: "mkokroy"
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: "mkokroy53@gmail.com"
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false # optional: leave blank to use default or override in Render dashboard
