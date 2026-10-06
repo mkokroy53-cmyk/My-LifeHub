@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: my-lifehub
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        sync: false # set to your-app-name.onrender.com after first deploy
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false # set to https://your-app-name.onrender.com after first deploy
+      - key: PYTHON_VERSION
+        value: "3.13.2"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - key: WEB_CONCURRENCY
+        value: "2"
