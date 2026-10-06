@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}{{ entry.title }} · {{ kind_label }}{% endblock %}
+{% block breadcrumb %}{{ kind_label }}{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:entries_by_kind' entry.kind %}">← Back to {{ kind_label }}</a>
+    <h1>{{ entry.title }}</h1>
+    <p>{{ entry.get_kind_display }} saved in your private record.</p>
+</section>
+
+<article class="entry-detail-card">
+    <div class="entry-detail-top">
+        <span class="entry-kind-tag">{{ entry.get_kind_display }}</span>
+        <span class="entry-status">{{ entry.get_status_display }}</span>
+    </div>
+
+    {% if entry.description %}
+        <div class="detail-copy">
+            <h2>Details</h2>
+            <p>{{ entry.description|linebreaksbr }}</p>
+        </div>
+    {% endif %}
+
+    <dl class="entry-metadata">
+        {% if entry.target_date %}
+        <div>
+            <dt>Target date</dt>
+            <dd>{{ entry.target_date|date:"F d, Y" }}</dd>
+        </div>
+        {% endif %}
+        {% if entry.progress %}
+        <div>
+            <dt>Progress</dt>
+            <dd>{{ entry.progress }}%</dd>
+        </div>
+        {% endif %}
+        <div>
+            <dt>Created</dt>
+            <dd>{{ entry.created_at|date:"F d, Y" }}</dd>
+        </div>
+        <div>
+            <dt>Updated</dt>
+            <dd>{{ entry.updated_at|date:"F d, Y" }}</dd>
+        </div>
+    </dl>
+
+    <div class="form-actions">
+        <a class="secondary-button" href="{% url 'dashboard:entries_by_kind' entry.kind %}">Back to list</a>
+        <a class="secondary-button" href="{% url 'dashboard:delete_entry' entry.kind entry.id %}">Delete</a>
+        <a class="primary-button button-link" href="{% url 'dashboard:edit_entry' entry.kind entry.id %}">Edit record <span aria-hidden="true">↗</span></a>
+    </div>
+</article>
+{% endblock %}

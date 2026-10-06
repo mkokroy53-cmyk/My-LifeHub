@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} · My Digital Life{% endblock %}
+{% block breadcrumb %}{{ page_title }}{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'finance:index' %}">← Back to finances</a>
+    <span class="section-kicker">PRIVATE FINANCE RECORD</span>
+    <h1>{{ page_title }}</h1>
+    <p>Amounts are recorded as entered and totals stay separate for each currency.</p>
+</section>
+<form method="post" class="workspace-form finance-form">{% csrf_token %}
+    {% for field in form %}<div class="form-field {% if field.name == 'notes' %}field-wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</div>{% endfor %}
+    {% if form.non_field_errors %}<div class="form-alert field-wide">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-actions field-wide"><a class="secondary-button" href="{% url 'finance:index' %}">Cancel</a><button class="primary-button" type="submit">Save transaction <span aria-hidden="true">↗</span></button></div>
+</form>
+{% endblock %}

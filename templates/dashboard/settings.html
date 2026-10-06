@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Settings · My Digital Life{% endblock %}
+{% block breadcrumb %}Settings{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:index' %}">← Back to overview</a>
+    <span class="section-kicker">YOUR PRIVATE WORKSPACE</span>
+    <h1>Settings</h1>
+    <p>Review your account and find the controls for this personal workspace.</p>
+</section>
+
+<section class="settings-grid">
+    <article class="settings-panel">
+        <span class="settings-panel-icon icon-blue" aria-hidden="true">01</span>
+        <div>
+            <span class="section-kicker">ACCOUNT</span>
+            <h2>{{ user.get_full_name|default:user.username }}</h2>
+            <p>Signed in as {{ user.username }}{% if user.email %} · {{ user.email }}{% endif %}</p>
+        </div>
+        <a class="secondary-button" href="{% url 'accounts:password_reset' %}">Change password</a>
+    </article>
+    <article class="settings-panel">
+        <span class="settings-panel-icon icon-lime" aria-hidden="true">02</span>
+        <div>
+            <span class="section-kicker">APPEARANCE</span>
+            <h2>Color theme</h2>
+            <p>Your light or dark theme preference is saved in this browser.</p>
+        </div>
+        <button class="secondary-button" type="button" data-theme-toggle>Switch theme</button>
+    </article>
+    <article class="settings-panel">
+        <span class="settings-panel-icon icon-coral" aria-hidden="true">03</span>
+        <div>
+            <span class="section-kicker">PORTABILITY</span>
+            <h2>Take your data with you</h2>
+            <p>Download your private records, schedule, finances, and uploaded PDFs.</p>
+        </div>
+        <a class="secondary-button" href="{% url 'dashboard:export' %}">Export my data</a>
+    </article>
+</section>
+{% endblock %}

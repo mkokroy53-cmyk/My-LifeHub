@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Overview · My Digital Life{% endblock %}
+{% block content %}
+<section class="welcome-band">
+    <div class="welcome-copy">
+        <span class="eyebrow eyebrow-light"><i></i> YOUR SPACE, YOUR PACE</span>
+        <h1>{{ greeting }},<br><em>{{ user.first_name|default:user.username }}.</em></h1>
+        <p>A little room to gather the things that matter.</p>
+    </div>
+    <div class="welcome-date"><span class="date-kicker">TODAY IS</span><strong>{{ today|date:"j" }}</strong><span>{{ today|date:"F Y" }}</span><i class="date-rule"></i><small>{{ today|date:"l" }}</small></div>
+    <span class="welcome-shape shape-ring" aria-hidden="true"></span><span class="welcome-shape shape-sun" aria-hidden="true"></span>
+</section>
+
+<section class="quick-section" aria-labelledby="quick-title">
+    <div class="section-heading"><div><span class="section-kicker">MAKE A NOTE OF IT</span><h2 id="quick-title">Quick capture</h2></div><a class="text-link" href="{% url 'dashboard:add_quote' %}">Save a quote <span aria-hidden="true">↗</span></a></div>
+    <div class="quick-actions">
+        <a class="quick-action" href="{% url 'dashboard:add_entry' 'diary' %}"><span class="quick-icon icon-coral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.2a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3v-12Z"/><path d="M9 9h6M9 12h6M9 15h4"/></svg></span><span>Add diary entry</span><b aria-hidden="true">+</b></a>
+        <a class="quick-action" href="{% url 'dashboard:add_entry' 'note' %}"><span class="quick-icon icon-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 15.5h6"/></svg></span><span>Add note</span><b aria-hidden="true">+</b></a>
+        <a class="quick-action" href="{% url 'dashboard:files' %}"><span class="quick-icon icon-lime"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m0 0L8 7m4-4 4 4"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span><span>Upload PDF</span><b aria-hidden="true">+</b></a>
+        <a class="quick-action" href="{% url 'dashboard:add_entry' 'goal' %}"><span class="quick-icon icon-lime"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.5 5.1 5.6.8-4.1 4 .9 5.6-4.9-2.6-4.9 2.6.9-5.6-4.1-4 5.6-.8L12 3Z"/></svg></span><span>Add goal</span><b aria-hidden="true">+</b></a>
+        <a class="quick-action" href="{% url 'dashboard:add_entry' 'project' %}"><span class="quick-icon icon-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M8 5V3.5h8V5M8 10h8M8 14h5"/></svg></span><span>Add project</span><b aria-hidden="true">+</b></a>
+        <a class="quick-action" href="{% url 'dashboard:add_entry' 'idea' %}"><span class="quick-icon icon-coral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M8.2 14.8a6 6 0 1 1 7.6 0c-.9.7-1.3 1.5-1.4 2.2H9.6c-.1-.7-.5-1.5-1.4-2.2Z"/></svg></span><span>Add idea</span><b aria-hidden="true">+</b></a>
+        <a class="quick-action" href="{% url 'dashboard:add_entry' 'memory' %}"><span class="quick-icon icon-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m4 17 5-4 3 2 3-3 5 4"/></svg></span><span>Add memory</span><b aria-hidden="true">+</b></a>
+    </div>
+</section>
+
+<section class="stats-section" aria-labelledby="stats-title">
+    <div class="section-heading"><div><span class="section-kicker">YOUR LIFE, AT A GLANCE</span><h2 id="stats-title">A growing collection</h2></div><span class="coming-note"><i></i> Updates as you add</span></div>
+    <div class="stats-grid">
+        {% for stat in stats %}<a class="stat-card" href="{{ stat.url }}"><span class="stat-card-top"><span class="stat-symbol {{ stat.tone }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.2a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3v-12Z"/><path d="M9 10h6M9 13h6"/></svg></span><span class="stat-arrow" aria-hidden="true">↗</span></span><strong>{{ stat.count }}</strong><span class="stat-label">{{ stat.label }}</span></a>{% endfor %}
+    </div>
+</section>
+
+<section class="dashboard-lower">
+    <div class="dashboard-primary">
+        <section class="dashboard-block" aria-labelledby="activity-title">
+            <div class="section-heading"><div><span class="section-kicker">FRESHLY GATHERED</span><h2 id="activity-title">Recent activity</h2></div></div>
+            {% if recent_entries %}<div class="activity-list">{% for entry in recent_entries %}<div class="activity-row"><span class="activity-mark {{ entry.kind }}"></span><span class="activity-copy"><strong>{{ entry.title }}</strong><small>{{ entry.get_kind_display }} · {{ entry.updated_at|date:"j M, g:i A" }}</small></span><span class="activity-status">{{ entry.get_status_display }}</span></div>{% endfor %}</div>{% else %}<div class="quiet-empty"><span class="empty-mark">✳</span><div><strong>Your story starts with a small note.</strong><p>Capture an idea, memory, or moment and it will appear here.</p></div><a class="text-link" href="{% url 'dashboard:add_entry' 'idea' %}">Save your first idea <span aria-hidden="true">↗</span></a></div>{% endif %}
+        </section>
+        <section class="dashboard-block goals-block" aria-labelledby="goals-title">
+            <div class="section-heading"><div><span class="section-kicker">KEEP MOVING, GENTLY</span><h2 id="goals-title">Active goals</h2></div><a class="text-link" href="{% url 'dashboard:add_entry' 'goal' %}">Add a goal <span aria-hidden="true">↗</span></a></div>
+            {% if active_goals %}<div class="goal-list">{% for goal in active_goals %}<div class="goal-row"><div class="goal-title"><strong>{{ goal.title }}</strong>{% if goal.target_date %}<small>Target {{ goal.target_date|date:"j M Y" }}</small>{% else %}<small>{{ goal.get_status_display }}</small>{% endif %}</div><span class="goal-percent">{{ goal.progress }}%</span><div class="progress-track" role="progressbar" aria-label="{{ goal.title }} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ goal.progress }}" data-progress="{{ goal.progress }}" style="--progress: {{ goal.progress }}%"><span class="progress-fill"></span></div></div>{% endfor %}</div>{% else %}<div class="quiet-empty quiet-empty-small"><div><strong>No active goals yet.</strong><p>Give something you care about a next step.</p></div><a class="text-link" href="{% url 'dashboard:add_entry' 'goal' %}">Create a goal <span aria-hidden="true">↗</span></a></div>{% endif %}
+        </section>
+    </div>
+    <aside class="dashboard-aside">
+        <section class="quote-panel" aria-labelledby="quote-title"><div class="section-heading"><div><span class="section-kicker">A THOUGHT FOR TODAY</span><h2 id="quote-title">Quote of the day</h2></div><span class="quote-spark" aria-hidden="true">✳</span></div>{% if quote_of_day %}<blockquote>“{{ quote_of_day.text }}”</blockquote><div class="quote-credit"><span>{{ quote_of_day.author|default:"Saved by you" }}</span>{% if quote_of_day.is_favorite %}<span class="favorite-label">FAVORITE</span>{% endif %}</div>{% else %}<p class="quote-empty">Keep a few words close that bring you back to what matters.</p>{% endif %}<a class="text-link" href="{% url 'dashboard:add_quote' %}">{% if quote_of_day %}Add another quote{% else %}Add your first quote{% endif %} <span aria-hidden="true">↗</span></a></section>
+        <section class="schedule-panel" aria-labelledby="today-schedule-title"><div class="section-heading"><div><span class="section-kicker">{{ today|date:"l, j F"|upper }}</span><h2 id="today-schedule-title">On your timetable</h2></div><a class="icon-link" href="{% url 'dashboard:add_schedule_item' 'timetable' %}" aria-label="Add timetable entry" title="Add timetable entry">+</a></div>{% if timetable %}<div class="schedule-list">{% for item in timetable %}<div class="schedule-row"><time>{{ item.start_time|time:"g:i A" }}</time><span class="schedule-divider"></span><span class="schedule-copy"><strong>{{ item.title }}</strong><small>{% if item.end_time %}Until {{ item.end_time|time:"g:i A" }}{% endif %}{% if item.location %}{% if item.end_time %} · {% endif %}{{ item.location }}{% endif %}</small></span></div>{% endfor %}</div>{% else %}<div class="schedule-empty"><span>No timetable items for today.</span><a class="text-link" href="{% url 'dashboard:add_schedule_item' 'timetable' %}">Add a weekly class <span aria-hidden="true">↗</span></a></div>{% endif %}</section>
+        <section class="schedule-panel upcoming-panel" aria-labelledby="upcoming-title"><div class="section-heading"><div><span class="section-kicker">LOOKING AHEAD</span><h2 id="upcoming-title">Coming up</h2></div><a class="icon-link" href="{% url 'dashboard:add_schedule_item' 'event' %}" aria-label="Add event" title="Add event">+</a></div>{% if upcoming %}<div class="upcoming-list">{% for item in upcoming %}<div class="upcoming-row"><span class="upcoming-date"><strong>{{ item.date|date:"j" }}</strong><small>{{ item.date|date:"M" }}</small></span><span class="upcoming-copy"><strong>{{ item.title }}</strong><small>{{ item.get_kind_display }}{% if item.start_time %} · {{ item.start_time|time:"g:i A" }}{% endif %}</small></span></div>{% endfor %}</div>{% else %}<div class="schedule-empty"><span>Your upcoming dates will gather here.</span><a class="text-link" href="{% url 'dashboard:add_schedule_item' 'deadline' %}">Add a deadline <span aria-hidden="true">↗</span></a></div>{% endif %}</section>
+    </aside>
+</section>
+<footer class="page-footer"><span>MY DIGITAL LIFE</span><span>ONE LIFE. MANY CHAPTERS.</span></footer>
+{% endblock %}

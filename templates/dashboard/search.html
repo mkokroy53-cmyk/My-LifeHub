@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Search · My Digital Life{% endblock %}
+{% block breadcrumb %}Search{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:index' %}">← Back to overview</a>
+    <h1>Search your life</h1>
+    <p>Find archive records, schedule items, transactions, and private files in one place.</p>
+</section>
+
+<section class="module-toolbar">
+    <form method="get" class="module-search">
+        <input type="search" name="q" value="{{ query }}" placeholder="Search notes, goals, ideas, and more..." aria-label="Search your life">
+        <button type="submit" class="primary-button">Search</button>
+    </form>
+</section>
+
+<section class="search-results">
+    {% if query %}
+        <div class="search-summary"><strong>{{ total_count }}</strong> result{% if total_count != 1 %}s{% endif %} for “{{ query }}”</div>
+    {% else %}
+        <div class="search-summary">Showing your most recent entries</div>
+    {% endif %}
+
+    {% if entry_results or schedule_results or finance_results or file_results %}
+        {% if entry_results %}
+        <div class="search-section">
+            <h2>Life records</h2>
+            <div class="module-list search-list">
+                {% for entry in entry_results %}
+                <article class="module-entry-card">
+                    <div class="module-entry-head">
+                        <div>
+                            <span class="entry-kind-tag">{{ entry.get_kind_display }}</span>
+                            <h2><a href="{% url 'dashboard:entry_detail' entry.kind entry.id %}">{{ entry.title }}</a></h2>
+                        </div>
+                        <span class="entry-status">{{ entry.get_status_display }}</span>
+                    </div>
+                    <p>{{ entry.description|default:"No description yet."|truncatechars:180 }}</p>
+                    <div class="entry-meta">
+                        {% if entry.target_date %}<span>Target: {{ entry.target_date|date:"M d, Y" }}</span>{% endif %}
+                        {% if entry.progress %}<span>Progress: {{ entry.progress }}%</span>{% endif %}
+                        <span>Updated {{ entry.updated_at|date:"M d, Y" }}</span>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if schedule_results %}
+        <div class="search-section">
+            <h2>Schedule</h2>
+            <div class="module-list search-list">
+                {% for item in schedule_results %}
+                <article class="module-entry-card">
+                    <div class="module-entry-head">
+                        <div>
+                            <span class="entry-kind-tag">{{ item.get_kind_display }}</span>
+                            <h2>{{ item.title }}</h2>
+                        </div>
+                    </div>
+                    <p>{{ item.description|default:"No description yet."|truncatechars:180 }}</p>
+                    <div class="entry-meta">
+                        {% if item.date %}<span>{{ item.date|date:"M d, Y" }}</span>{% endif %}
+                        {% if item.start_time %}<span>{{ item.start_time|time:"g:i A" }}</span>{% endif %}
+                        {% if item.location %}<span>{{ item.location }}</span>{% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if finance_results %}
+        <div class="search-section">
+            <h2>Finances</h2>
+            <div class="module-list search-list">
+                {% for transaction in finance_results %}
+                <article class="module-entry-card">
+                    <div class="module-entry-head">
+                        <div>
+                            <span class="entry-kind-tag">{{ transaction.get_kind_display }} · {{ transaction.currency }}</span>
+                            <h2><a href="{% url 'finance:edit' transaction.pk %}">{{ transaction.title }}</a></h2>
+                        </div>
+                        <span class="entry-status">{{ transaction.amount|floatformat:2 }} {{ transaction.currency }}</span>
+                    </div>
+                    <p>{% if transaction.notes %}{{ transaction.notes|truncatechars:180 }}{% else %}{{ transaction.get_category_display }}{% endif %}</p>
+                    <div class="entry-meta"><span>{{ transaction.date|date:"M d, Y" }}</span><span>{{ transaction.get_category_display }}</span></div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if file_results %}
+        <div class="search-section">
+            <h2>Private files</h2>
+            <div class="module-list search-list">
+                {% for upload in file_results %}
+                <article class="module-entry-card">
+                    <div class="module-entry-head">
+                        <div><span class="entry-kind-tag">PDF · {{ upload.file_size|filesizeformat }}</span><h2>{{ upload.original_filename }}</h2></div>
+                        <a class="secondary-button" href="{% url 'dashboard:download_file' upload.pk %}">Download</a>
+                    </div>
+                    <div class="entry-meta"><span>Added {{ upload.uploaded_at|date:"M d, Y" }}</span></div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="quiet-empty module-empty">
+            <span class="empty-mark">✳</span>
+            <div>
+                <strong>No results found.</strong>
+                <p>Try searching for a different topic, place, or goal.</p>
+            </div>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Delete PDF · My Digital Life{% endblock %}
+{% block breadcrumb %}Delete PDF{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:files' %}">← Back to files</a>
+    <span class="section-kicker">REMOVE DOCUMENT</span>
+    <h1>Delete this PDF?</h1>
+    <p>The file and its saved record will be permanently removed.</p>
+</section>
+<section class="delete-confirm-panel">
+    <div class="delete-record"><strong>{{ upload.original_filename }}</strong><span>{{ upload.file_size|filesizeformat }}</span></div>
+    <form method="post" class="form-actions">{% csrf_token %}<a class="secondary-button" href="{% url 'dashboard:files' %}">Cancel</a><button class="danger-button" type="submit">Delete PDF</button></form>
+</section>
+{% endblock %}

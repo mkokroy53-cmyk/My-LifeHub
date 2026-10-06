@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Sign in · My Digital Life{% endblock %}
+{% block auth_content %}
+<span class="section-kicker">WELCOME HOME</span>
+<h2>Sign in to<br><em>your space.</em></h2>
+<p class="auth-description">Pick up right where your story is.</p>
+{% if form.errors %}<div class="form-alert" role="alert">That username and password combination didn't match. Please try again.</div>{% endif %}
+<form method="post" class="auth-form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <label for="id_username">Username</label>
+    <input id="id_username" name="username" type="text" autocomplete="username" autofocus required>
+    <div class="label-row"><label for="id_password">Password</label><a href="{% url 'accounts:password_reset' %}">Forgot password?</a></div>
+    <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+    <button class="primary-button" type="submit">Enter your space <span aria-hidden="true">↗</span></button>
+</form>
+<p class="auth-note">Your personal archive is private and just for you.</p>
+{% endblock %}

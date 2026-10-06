@@ -1,0 +1,75 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080b1b">
+    <title>{% block title %}My Digital Life{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <script src="{% static 'js/app.js' %}" defer></script>
+</head>
+<body class="{% if user.is_authenticated %}app-page{% else %}auth-page{% endif %}">
+{% if user.is_authenticated %}
+    <div class="app-shell">
+        <main class="main-area">
+            <header class="topbar">
+                <div class="crumb"><span>Workspace</span><span class="crumb-slash">/</span><strong>{% block breadcrumb %}Overview{% endblock %}</strong></div>
+                <div class="topbar-right"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light mode" title="Switch to light mode"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg></button><span class="private-indicator"><i></i> Private space</span><span class="topbar-date">{% now "D, j M" %}</span></div>
+            </header>
+            {% if messages %}<div class="toast-stack" aria-live="polite">{% for message in messages %}<div class="toast toast-{{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+            <div class="page-content">{% block content %}{% endblock %}</div>
+        </main>
+        <button class="scroll-top" type="button" data-scroll-top aria-label="Back to top" title="Back to top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6M12 8v12"/></svg></button>
+        <button class="immersive-nav-scrim" type="button" data-nav-close aria-label="Close navigation"></button>
+        <details class="immersive-navigation" data-immersive-navigation>
+            <summary class="immersive-nav-toggle" role="button" aria-expanded="false" data-nav-toggle aria-controls="floating-navigation" aria-label="Open navigation" title="Explore your world">
+                <span class="nav-toggle-glyph" aria-hidden="true"><i></i><i></i><i></i></span>
+            </summary>
+            <section class="floating-nav-panel" id="floating-navigation" aria-label="Application navigation">
+                <header class="floating-nav-header">
+                    <button class="floating-nav-back" type="button" data-nav-back hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12"/></svg><span>Back</span></button>
+                    <div><span class="section-kicker">YOUR PERSONAL WORLD</span><h2 data-nav-title>Explore</h2></div>
+                    <a class="floating-nav-home" href="{% url 'dashboard:index' %}" aria-label="Overview" title="Overview"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="4" rx="1.5"/><rect x="13.5" y="9.5" width="7" height="11" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/></svg></a>
+                </header>
+                <div class="floating-nav-root" data-nav-root>
+                    <details class="nav-section" data-nav-section="My Life"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-blue" aria-hidden="true">✳</span><span>My Life</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:library' %}">Life archive</a><a href="{% url 'dashboard:files' %}">Private files</a><a href="{% url 'dashboard:export' %}">Export my data</a><a href="{% url 'dashboard:entries_by_kind' 'note' %}">Notes</a></nav></details>
+                    <details class="nav-section" data-nav-section="Learning"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-lime" aria-hidden="true">▤</span><span>Learning</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:entries_by_kind' 'resource' %}">Study materials</a><a href="{% url 'dashboard:add_entry' 'resource' %}">Add resource</a><a href="{% url 'dashboard:calendar' %}">Timetable</a><a href="{% url 'dashboard:entries_by_kind' 'note' %}">Learning notes</a></nav></details>
+                    <details class="nav-section" data-nav-section="Diary"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-coral" aria-hidden="true">✎</span><span>Diary</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:entries_by_kind' 'diary' %}">All entries</a><a href="{% url 'dashboard:add_entry' 'diary' %}">Write an entry</a></nav></details>
+                    <details class="nav-section" data-nav-section="Projects"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-blue" aria-hidden="true">▧</span><span>Projects</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:entries_by_kind' 'project' %}">All projects</a><a href="{% url 'dashboard:add_entry' 'project' %}">New project</a></nav></details>
+                    <details class="nav-section" data-nav-section="Memories"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-coral" aria-hidden="true">▣</span><span>Memories</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:entries_by_kind' 'memory' %}">Memory collection</a><a href="{% url 'dashboard:add_entry' 'memory' %}">Save a memory</a></nav></details>
+                    <details class="nav-section" data-nav-section="Entertainment"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-lime" aria-hidden="true">◈</span><span>Entertainment</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:entries_by_kind' 'entertainment' %}">My entertainment</a><a href="{% url 'dashboard:add_entry' 'entertainment' %}">Add something to enjoy</a></nav></details>
+                    <details class="nav-section" data-nav-section="Goals"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-lime" aria-hidden="true">☆</span><span>Goals</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:entries_by_kind' 'goal' %}">All goals</a><a href="{% url 'dashboard:add_entry' 'goal' %}">Set a goal</a></nav></details>
+                    <details class="nav-section" data-nav-section="Achievements"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-coral" aria-hidden="true">✧</span><span>Achievements</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:entries_by_kind' 'achievement' %}">Milestones</a><a href="{% url 'dashboard:add_entry' 'achievement' %}">Record an achievement</a></nav></details>
+                    <details class="nav-section" data-nav-section="Ideas"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-blue" aria-hidden="true">✦</span><span>Ideas</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:entries_by_kind' 'idea' %}">Idea box</a><a href="{% url 'dashboard:add_entry' 'idea' %}">Capture an idea</a></nav></details>
+                    <details class="nav-section" data-nav-section="Calendar"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-blue" aria-hidden="true">▦</span><span>Calendar</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:calendar' %}">Month view</a><a href="{% url 'dashboard:add_schedule_item' 'event' %}">Add event</a><a href="{% url 'dashboard:add_schedule_item' 'timetable' %}">Add weekly timetable item</a></nav></details>
+                    <details class="nav-section" data-nav-section="Finances"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-coral" aria-hidden="true">¤</span><span>Finances</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'finance:index' %}">Ledger</a><a href="{% url 'finance:add' %}">Record transaction</a></nav></details>
+                    <details class="nav-section" data-nav-section="Search"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-lime" aria-hidden="true">⌕</span><span>Search</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:search' %}">Search everything</a></nav></details>
+                    <details class="nav-section" data-nav-section="Settings"><summary role="button" aria-expanded="false"><span class="nav-section-icon icon-blue" aria-hidden="true">⚙</span><span>Settings</span><b aria-hidden="true">↗</b></summary><nav class="nav-section-links"><a href="{% url 'dashboard:settings' %}">Account and preferences</a><a href="{% url 'accounts:password_reset' %}">Change password</a></nav></details>
+                </div>
+                <form class="floating-nav-signout" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<span>{{ user.get_full_name|default:user.username }}</span><button type="submit">Sign out <span aria-hidden="true">↗</span></button></form>
+            </section>
+        </details>
+    </div>
+{% else %}
+    <main class="auth-layout">
+        <section class="auth-story" aria-label="My Digital Life">
+            <a class="brand brand-light" href="{% url 'accounts:login' %}"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="brand-copy"><strong>My Digital Life</strong><small>your personal archive</small></span></a>
+            <div class="story-content"><span class="eyebrow"><i></i> A space of your own</span><h1>Your story,<br>all in one place.</h1><p>A thoughtful home for the moments, ideas, and plans that make a life yours.</p></div>
+            <div class="story-footer"><span>PERSONAL BY DESIGN</span><span>01 <i></i> BUILT FOR YOU</span></div>
+            <div class="story-orbit orbit-one"></div><div class="story-orbit orbit-two"></div><div class="story-spark">✳</div>
+        </section>
+        <section class="auth-panel">
+            <div class="auth-card">
+                {% if messages %}<div class="toast-stack" aria-live="polite">{% for message in messages %}<div class="toast toast-{{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+                {% block auth_content %}{% endblock %}
+            </div>
+            <p class="auth-footnote">A private place for your life, at your pace.</p>
+        </section>
+    </main>
+{% endif %}
+</body>
+</html>

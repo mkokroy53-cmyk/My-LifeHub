@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Delete transaction · My Digital Life{% endblock %}
+{% block breadcrumb %}Delete transaction{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'finance:index' %}">← Back to finances</a>
+    <span class="section-kicker">REMOVE RECORD</span>
+    <h1>Delete transaction?</h1>
+    <p>This will permanently remove the record from your private ledger.</p>
+</section>
+<section class="delete-confirm-panel">
+    <div class="delete-record"><strong>{{ transaction.title }}</strong><span>{{ transaction.date|date:"M d, Y" }} · {{ transaction.amount|floatformat:2 }} {{ transaction.currency }} · {{ transaction.get_kind_display }}</span></div>
+    <form method="post" class="form-actions">{% csrf_token %}<a class="secondary-button" href="{% url 'finance:index' %}">Cancel</a><button class="danger-button" type="submit">Delete transaction</button></form>
+</section>
+{% endblock %}

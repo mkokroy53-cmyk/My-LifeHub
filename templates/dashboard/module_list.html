@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{{ kind_label }} · My Digital Life{% endblock %}
+{% block breadcrumb %}{{ kind_label }}{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:library' %}">← Back to archive</a>
+    <h1>{{ kind_label }}</h1>
+    <p>Private records for this part of your life.</p>
+</section>
+
+<section class="module-toolbar">
+    <form method="get" class="module-search">
+        <input type="search" name="q" value="{{ query }}" placeholder="Search {{ kind_label|lower }}..." aria-label="Search {{ kind_label|lower }}">
+        <button type="submit" class="primary-button">Search</button>
+    </form>
+    <a class="secondary-button" href="{% url 'dashboard:add_entry' kind %}">Add new</a>
+</section>
+
+<section class="module-list">
+    {% if entries %}
+        {% for entry in entries %}
+        <article class="module-entry-card">
+            <div class="module-entry-head">
+                <div>
+                    <span class="entry-kind-tag">{{ entry.get_kind_display }}</span>
+                    <h2><a href="{% url 'dashboard:entry_detail' entry.kind entry.id %}">{{ entry.title }}</a></h2>
+                </div>
+                {% if entry.status %}<span class="entry-status">{{ entry.get_status_display }}</span>{% endif %}
+            </div>
+            <p>{{ entry.description|default:"No description added yet."|truncatechars:180 }}</p>
+            <div class="entry-meta">
+                {% if entry.target_date %}<span>Target: {{ entry.target_date|date:"M d, Y" }}</span>{% endif %}
+                {% if entry.progress %}<span>Progress: {{ entry.progress }}%</span>{% endif %}
+                <span>Updated {{ entry.updated_at|date:"M d, Y" }}</span>
+            </div>
+        </article>
+        {% endfor %}
+    {% else %}
+        <div class="quiet-empty module-empty">
+            <span class="empty-mark">✳</span>
+            <div>
+                <strong>No {{ kind_label|lower }} found.</strong>
+                <p>{% if query %}Try a different search or add a new record to this module.{% else %}Start collecting your life here by creating your first entry.{% endif %}</p>
+            </div>
+            <a class="text-link" href="{% url 'dashboard:add_entry' kind %}">Create one <span aria-hidden="true">↗</span></a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

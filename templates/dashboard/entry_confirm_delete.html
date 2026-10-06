@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Delete {{ entry.get_kind_display }} · My Digital Life{% endblock %}
+{% block breadcrumb %}Delete {{ entry.get_kind_display }}{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:entry_detail' entry.kind entry.id %}">← Back to record</a>
+    <span class="section-kicker">REMOVE RECORD</span>
+    <h1>Delete this {{ entry.get_kind_display|lower }}?</h1>
+    <p>This permanently removes the record from your private archive.</p>
+</section>
+<section class="delete-confirm-panel">
+    <div class="delete-record"><strong>{{ entry.title }}</strong><span>Updated {{ entry.updated_at|date:"M d, Y" }}</span></div>
+    <form method="post" class="form-actions">{% csrf_token %}<a class="secondary-button" href="{% url 'dashboard:entry_detail' entry.kind entry.id %}">Cancel</a><button class="danger-button" type="submit">Delete record</button></form>
+</section>
+{% endblock %}

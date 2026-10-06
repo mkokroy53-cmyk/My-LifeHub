@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Add {{ item_title }} · My Digital Life{% endblock %}
+{% block breadcrumb %}Add {{ item_title }}{% endblock %}
+{% block content %}
+<section class="form-page-heading"><a class="back-link" href="{% url 'dashboard:index' %}">← Back to overview</a><span class="section-kicker">YOUR SCHEDULE</span><h1>Add a {{ item_title|lower }}</h1><p>Keep the important dates and weekly rhythm close at hand.</p></section>
+<form method="post" class="workspace-form">{% csrf_token %}
+    {% for field in form %}<div class="form-field {% if field.name == 'description' %}field-wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</div>{% endfor %}
+    {% if form.non_field_errors %}<div class="form-alert field-wide">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-actions field-wide"><a class="secondary-button" href="{% url 'dashboard:index' %}">Cancel</a><button class="primary-button" type="submit">Save to schedule <span aria-hidden="true">↗</span></button></div>
+</form>
+{% endblock %}
