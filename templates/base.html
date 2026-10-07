@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080b1b">
-    <title>{% block title %}My Digital Life{% endblock %}</title>
+    <title>{% block title %}My-LifeHub{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
     <link rel="shortcut icon" type="image/png" href="{% static 'img/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
@@ -59,13 +59,19 @@
     </div>
 {% else %}
     <main class="auth-layout">
-        <section class="auth-story" aria-label="My Digital Life">
-            <a class="brand brand-light" href="{% url 'accounts:login' %}"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="brand-copy"><strong>My Digital Life</strong><small>your personal archive</small></span></a>
+        <section class="auth-story" aria-label="My-LifeHub">
+            <a class="brand brand-light" href="{% url 'accounts:login' %}"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="brand-copy"><strong>My-LifeHub</strong><small>your personal archive</small></span></a>
             <div class="story-content"><span class="eyebrow"><i></i> A space of your own</span><h1>Your story,<br>all in one place.</h1><p>A thoughtful home for the moments, ideas, and plans that make a life yours.</p></div>
             <div class="story-footer"><span>PERSONAL BY DESIGN</span><span>01 <i></i> BUILT FOR YOU</span></div>
             <div class="story-orbit orbit-one"></div><div class="story-orbit orbit-two"></div><div class="story-spark">✳</div>
         </section>
         <section class="auth-panel">
+            <div class="auth-top-actions">
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme" title="Switch theme">
+                    <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+                    <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>
+                </button>
+            </div>
             <div class="auth-card">
                 {% if messages %}<div class="toast-stack" aria-live="polite">{% for message in messages %}<div class="toast toast-{{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
                 {% block auth_content %}{% endblock %}

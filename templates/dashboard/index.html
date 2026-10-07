@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Overview · My Digital Life{% endblock %}
+{% block title %}Overview · My-LifeHub{% endblock %}
 {% block content %}
 <section class="welcome-band">
     <div class="welcome-copy">
@@ -48,5 +48,5 @@
         <section class="schedule-panel upcoming-panel" aria-labelledby="upcoming-title"><div class="section-heading"><div><span class="section-kicker">LOOKING AHEAD</span><h2 id="upcoming-title">Coming up</h2></div><a class="icon-link" href="{% url 'dashboard:add_schedule_item' 'event' %}" aria-label="Add event" title="Add event">+</a></div>{% if upcoming %}<div class="upcoming-list">{% for item in upcoming %}<div class="upcoming-row"><span class="upcoming-date"><strong>{{ item.date|date:"j" }}</strong><small>{{ item.date|date:"M" }}</small></span><span class="upcoming-copy"><strong>{{ item.title }}</strong><small>{{ item.get_kind_display }}{% if item.start_time %} · {{ item.start_time|time:"g:i A" }}{% endif %}</small></span></div>{% endfor %}</div>{% else %}<div class="schedule-empty"><span>Your upcoming dates will gather here.</span><a class="text-link" href="{% url 'dashboard:add_schedule_item' 'deadline' %}">Add a deadline <span aria-hidden="true">↗</span></a></div>{% endif %}</section>
     </aside>
 </section>
-<footer class="page-footer"><span>MY DIGITAL LIFE</span><span>ONE LIFE. MANY CHAPTERS.</span></footer>
+<footer class="page-footer"><span>MY-LIFEHUB</span><span>ONE LIFE. MANY CHAPTERS.</span></footer>
 {% endblock %}

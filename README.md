@@ -1,4 +1,4 @@
-# My Digital Life
+# My-LifeHub
 
 A private, single-person life-management workspace. This repository is being built in phases; Phase 1 provides Django authentication and local configuration, while Phase 2 adds real, user-owned dashboard captures and schedule data.
 
