@@ -22,6 +22,7 @@ class FinanceTransaction(models.Model):
         JPY = 'JPY', 'Japanese yen'
         CHF = 'CHF', 'Swiss franc'
         NZD = 'NZD', 'New Zealand dollar'
+        KES = 'KES', 'Kenyan shilling'
 
     class Category(models.TextChoices):
         SALARY = 'salary', 'Salary'
