@@ -41,10 +41,8 @@ class Command(BaseCommand):
             user.email = email
             user.is_staff = True
             user.is_superuser = True
-            if not user.first_name:
-                user.first_name = 'Frank'
-            if not user.last_name:
-                user.last_name = 'Mkok'
+            user.first_name = 'Roy'
+            user.last_name = 'Mkok'
             user.set_password(password)
             user.save()
             self.stdout.write(
@@ -55,7 +53,7 @@ class Command(BaseCommand):
                 username=username,
                 email=email,
                 password=password,
-                first_name='Frank',
+                first_name='Roy',
                 last_name='Mkok'
             )
             self.stdout.write(
