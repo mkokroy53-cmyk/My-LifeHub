@@ -3,6 +3,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 
 def private_pdf_upload_path(instance, filename):
@@ -31,6 +32,12 @@ class DashboardEntry(models.Model):
 		LOW = 'low', 'Low'
 		ROUGH = 'rough', 'Rough'
 
+	class Priority(models.TextChoices):
+		LOW = 'low', 'Low'
+		MEDIUM = 'medium', 'Medium'
+		HIGH = 'high', 'High'
+		CRITICAL = 'critical', 'Critical'
+
 	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboard_entries')
 	kind = models.CharField(max_length=20, choices=Kind.choices, db_index=True)
 	title = models.CharField(max_length=180)
@@ -40,6 +47,18 @@ class DashboardEntry(models.Model):
 	target_date = models.DateField(null=True, blank=True)
 	mood = models.CharField(max_length=12, choices=Mood.choices, blank=True)
 	is_pinned = models.BooleanField(default=False)
+
+	# Project-specific fields
+	priority = models.CharField(max_length=10, choices=Priority.choices, blank=True)
+	role = models.CharField(max_length=120, blank=True)
+	client = models.CharField(max_length=120, blank=True)
+	period_start = models.DateField(null=True, blank=True)
+	period_end = models.DateField(null=True, blank=True)
+	tech_stack = models.CharField(max_length=300, blank=True, help_text='Comma-separated technologies')
+	repo_url = models.URLField(max_length=400, blank=True)
+	live_url = models.URLField(max_length=400, blank=True)
+	notes_url = models.URLField(max_length=400, blank=True)
+
 	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -49,6 +68,32 @@ class DashboardEntry(models.Model):
 
 	def __str__(self):
 		return self.title
+
+	@property
+	def tech_list(self):
+		return [tech.strip() for tech in self.tech_stack.split(',') if tech.strip()]
+
+	@property
+	def period_label(self):
+		if not self.period_start and not self.period_end:
+			return ''
+		start = self.period_start.strftime('%b %Y') if hasattr(self.period_start, 'strftime') else '?'
+		if not self.period_end:
+			end = 'Present'
+		else:
+			end = self.period_end.strftime('%b %Y') if hasattr(self.period_end, 'strftime') else '?'
+		return f'{start} – {end}'
+
+	@property
+	def duration_label(self):
+		if not hasattr(self.period_start, 'strftime'):
+			return ''
+		end = self.period_end if hasattr(self.period_end, 'strftime') else timezone.localdate()
+		days = (end - self.period_start).days
+		if days < 0:
+			return ''
+		months = max(1, int(days / 30 + 0.5))
+		return f'{months} month{"s" if months != 1 else ""}'
 
 
 class DashboardScheduleItem(models.Model):

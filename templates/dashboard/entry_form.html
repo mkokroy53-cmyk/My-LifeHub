@@ -3,13 +3,77 @@
 {% block breadcrumb %}{% if is_edit %}Edit{% else %}Add{% endif %} {{ item_title }}{% endblock %}
 {% block content %}
 <section class="form-page-heading">
-    <a class="back-link" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% else %}{% if kind == 'diary' %}{% url 'dashboard:diary' %}{% else %}{% url 'dashboard:index' %}{% endif %}{% endif %}">← {% if entry %}Back to record{% elif kind == 'diary' %}Back to diary{% else %}Back to overview{% endif %}</a>
+    <a class="back-link" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% else %}{% if kind == 'diary' %}{% url 'dashboard:diary' %}{% elif kind == 'project' %}{% url 'dashboard:projects' %}{% else %}{% url 'dashboard:index' %}{% endif %}{% endif %}">← {% if entry %}Back to record{% elif kind == 'diary' %}Back to diary{% elif kind == 'project' %}Back to projects{% else %}Back to overview{% endif %}</a>
     <span class="section-kicker">{% if is_edit %}UPDATE YOUR RECORD{% else %}NEW {{ item_title|upper }}{% endif %}</span>
     <h1>{% if is_edit %}Edit{% else %}Add a{% endif %} {{ item_title|lower }}</h1>
-    <p>{% if is_edit %}Update the details saved in your private archive.{% elif kind == 'diary' %}Write freely — this entry is saved privately and stays until you edit or delete it.{% else %}Fill in the details below and save. Everything you add is stored in your private archive.{% endif %}</p>
+    <p>{% if is_edit %}Update the details saved in your private archive.{% elif kind == 'diary' %}Write freely — this entry is saved privately and stays until you edit or delete it.{% elif kind == 'project' %}Describe the project, the period you worked on it, the stack you used, and how far along it is.{% else %}Fill in the details below and save. Everything you add is stored in your private archive.{% endif %}</p>
 </section>
 <form method="post" class="workspace-form{% if kind == 'diary' %} diary-form{% endif %}">
     {% csrf_token %}
+
+    {% if kind == 'project' %}
+    <fieldset class="form-section field-wide">
+        <legend class="form-section-legend"><span class="section-kicker">THE BASICS</span></legend>
+        <div class="form-section-grid">
+            {% for field in form %}
+                {% if field.name == 'title' or field.name == 'description' or field.name == 'client' or field.name == 'role' %}
+                <div class="form-field {% if field.name == 'description' %}field-wide{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section field-wide">
+        <legend class="form-section-legend"><span class="section-kicker">PERIOD &amp; TIMELINE</span></legend>
+        <div class="form-section-grid">
+            {% for field in form %}
+                {% if field.name == 'period_start' or field.name == 'period_end' or field.name == 'target_date' %}
+                <div class="form-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section field-wide">
+        <legend class="form-section-legend"><span class="section-kicker">STATUS &amp; STACK</span></legend>
+        <div class="form-section-grid">
+            {% for field in form %}
+                {% if field.name == 'status' or field.name == 'priority' or field.name == 'progress' or field.name == 'tech_stack' %}
+                <div class="form-field {% if field.name == 'tech_stack' %}field-wide{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section field-wide">
+        <legend class="form-section-legend"><span class="section-kicker">LINKS</span></legend>
+        <div class="form-section-grid">
+            {% for field in form %}
+                {% if field.name == 'repo_url' or field.name == 'live_url' or field.name == 'notes_url' %}
+                <div class="form-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </fieldset>
+    {% else %}
     {% for field in form %}
     <div class="form-field {% if field.name == 'description' or field.name == 'notes' %}field-wide{% endif %}">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -22,9 +86,11 @@
         {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
     </div>
     {% endfor %}
+    {% endif %}
+
     {% if form.non_field_errors %}<div class="form-alert field-wide">{{ form.non_field_errors }}</div>{% endif %}
     <div class="form-actions field-wide">
-        <a class="secondary-button" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% elif kind == 'diary' %}{% url 'dashboard:diary' %}{% else %}{% url 'dashboard:index' %}{% endif %}">Cancel</a>
+        <a class="secondary-button" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% elif kind == 'diary' %}{% url 'dashboard:diary' %}{% elif kind == 'project' %}{% url 'dashboard:projects' %}{% else %}{% url 'dashboard:index' %}{% endif %}">Cancel</a>
         <button class="primary-button" type="submit">{% if is_edit %}Update{% else %}Save{% endif %} {{ item_title|lower }} <span aria-hidden="true">↗</span></button>
     </div>
 </form>

@@ -8,27 +8,67 @@ from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem, Priva
 class DashboardEntryForm(forms.ModelForm):
     class Meta:
         model = DashboardEntry
-        fields = ['title', 'description', 'target_date', 'status', 'progress', 'mood', 'is_pinned']
+        fields = [
+            'title', 'description', 'target_date', 'status', 'progress', 'mood', 'is_pinned',
+            'priority', 'role', 'client', 'period_start', 'period_end', 'tech_stack',
+            'repo_url', 'live_url', 'notes_url',
+        ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'target_date': forms.DateInput(attrs={'type': 'date'}),
+            'period_start': forms.DateInput(attrs={'type': 'date'}),
+            'period_end': forms.DateInput(attrs={'type': 'date'}),
             'progress': forms.NumberInput(attrs={'min': 0, 'max': 100}),
+            'tech_stack': forms.TextInput(attrs={'placeholder': 'Django, Python, PostgreSQL, JavaScript'}),
         }
 
     def __init__(self, *args, kind=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.kind = kind
         self.fields['title'].widget.attrs.update({'autofocus': True, 'maxlength': 180})
-        if kind != DashboardEntry.Kind.GOAL:
+
+        project_fields = [
+            'priority', 'role', 'client', 'period_start', 'period_end',
+            'tech_stack', 'repo_url', 'live_url', 'notes_url',
+        ]
+
+        if kind not in (DashboardEntry.Kind.GOAL, DashboardEntry.Kind.PROJECT):
             for field_name in ['target_date', 'status', 'progress']:
                 self.fields.pop(field_name)
+        if kind == DashboardEntry.Kind.PROJECT:
+            # Projects track progress, but not a single "target date".
+            self.fields.pop('target_date', None)
+            self.fields['progress'].label = 'Progress'
+            self.fields['progress'].help_text = 'How far along is this project? (0–100%)'
         if kind != DashboardEntry.Kind.DIARY:
             for field_name in ['mood', 'is_pinned']:
                 self.fields.pop(field_name)
         else:
             self.fields['title'].label = 'Entry title'
-            self.fields['description'].label = 'Today\'s thoughts'
+            self.fields['description'].label = "Today's thoughts"
             self.fields['description'].widget.attrs.update({'rows': 10, 'placeholder': 'Write freely about your day...'})
+
+        if kind == DashboardEntry.Kind.PROJECT:
+            for field_name in project_fields:
+                if field_name in self.fields:
+                    self.fields[field_name].required = False
+            self.fields['description'].label = 'Project overview'
+            self.fields['description'].widget.attrs.update({
+                'rows': 5,
+                'placeholder': 'What is this project about? What problem does it solve?',
+            })
+            self.fields['priority'].widget = forms.Select(choices=[('', 'No priority')] + list(DashboardEntry.Priority.choices))
+        else:
+            for field_name in project_fields:
+                self.fields.pop(field_name, None)
+
+    def clean(self):
+        cleaned = super().clean()
+        start = cleaned.get('period_start')
+        end = cleaned.get('period_end')
+        if start and end and end < start:
+            self.add_error('period_end', 'The end date must be after the start date.')
+        return cleaned
 
 
 class LearningResourceForm(forms.ModelForm):

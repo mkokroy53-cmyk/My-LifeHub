@@ -10,6 +10,7 @@ urlpatterns = [
     path('search/', views.search, name='search'),
     path('calendar/', views.calendar_view, name='calendar'),
     path('diary/', views.diary_workspace, name='diary'),
+    path('projects/', views.projects_workspace, name='projects'),
     path('export/', views.export, name='export'),
     path('files/', views.files, name='files'),
     path('files/<int:upload_id>/download/', views.download_file, name='download_file'),

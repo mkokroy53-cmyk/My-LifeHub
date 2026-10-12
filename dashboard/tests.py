@@ -1,4 +1,5 @@
 import json
+from datetime import date
 from io import BytesIO
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
@@ -557,3 +558,156 @@ class QuoteRotationTests(TestCase):
         favorite = DashboardQuote.objects.create(user=self.user, text='Favorite quote', is_favorite=True)
         response = self.client.get(reverse('dashboard:index'))
         self.assertEqual(response.context['quote_of_day'].pk, favorite.pk)
+
+
+
+class ProjectsWorkspaceTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username='project-owner', password='a-strong-test-password')
+        self.other_user = user_model.objects.create_user(username='project-other', password='a-strong-test-password')
+        self.client.force_login(self.user)
+
+    def make_project(self, **overrides):
+        data = {
+            'title': 'Campus Ride Share',
+            'description': 'A ride-sharing platform for students.',
+            'client': 'Innovation Hub',
+            'role': 'Lead Developer',
+            'status': DashboardEntry.Status.IN_PROGRESS,
+            'priority': DashboardEntry.Priority.HIGH,
+            'progress': 65,
+            'period_start': '2026-01-15',
+            'period_end': '2026-06-30',
+            'tech_stack': 'Django, Python, PostgreSQL',
+            'repo_url': 'https://github.com/example/repo',
+        }
+        data.update(overrides)
+        return DashboardEntry.objects.create(user=self.user, kind=DashboardEntry.Kind.PROJECT, **data)
+
+    def test_projects_workspace_renders(self):
+        response = self.client.get(reverse('dashboard:projects'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Total projects')
+
+    def test_project_saves_all_fields(self):
+        response = self.client.post(
+            reverse('dashboard:add_entry', kwargs={'kind': DashboardEntry.Kind.PROJECT}),
+            {
+                'title': 'Portfolio Rewrite',
+                'description': 'Rebuild the site.',
+                'client': 'Personal',
+                'role': 'Solo Developer',
+                'status': DashboardEntry.Status.NEW,
+                'priority': DashboardEntry.Priority.MEDIUM,
+                'progress': 10,
+                'period_start': '2026-02-01',
+                'period_end': '2026-03-01',
+                'tech_stack': 'Django, HTMX',
+                'repo_url': 'https://github.com/example/site',
+            },
+        )
+        self.assertRedirects(response, reverse('dashboard:index'))
+        project = DashboardEntry.objects.get(title='Portfolio Rewrite')
+        self.assertEqual(project.role, 'Solo Developer')
+        self.assertEqual(project.client, 'Personal')
+        self.assertEqual(project.priority, DashboardEntry.Priority.MEDIUM)
+        self.assertEqual(project.progress, 10)
+        self.assertEqual(project.tech_list, ['Django', 'HTMX'])
+        self.assertEqual(project.period_label, 'Feb 2026 – Mar 2026')
+        self.assertEqual(project.duration_label, '1 month')
+
+    def test_period_label_shows_present_when_no_end_date(self):
+        project = self.make_project(period_end=None)
+        self.assertIn('Present', project.period_label)
+
+    def test_duration_runs_to_today_when_still_active(self):
+        # A live project with no end date measures its duration up to today.
+        project = self.make_project(period_start=date(2026, 1, 15), period_end=None)
+        self.assertTrue(
+            project.duration_label.endswith('month') or project.duration_label.endswith('months'),
+            f'unexpected duration label: {project.duration_label!r}',
+        )
+
+    def test_project_detail_page_shows_fields(self):
+        project = self.make_project()
+        response = self.client.get(
+            reverse('dashboard:entry_detail', kwargs={'kind': project.kind, 'entry_id': project.pk})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Lead Developer')
+        self.assertContains(response, 'Innovation Hub')
+        self.assertContains(response, 'Django')
+        self.assertContains(response, 'Repository')
+
+    def test_project_board_is_user_scoped(self):
+        self.make_project()
+        DashboardEntry.objects.create(
+            user=self.other_user,
+            kind=DashboardEntry.Kind.PROJECT,
+            title='Someone else project',
+        )
+        response = self.client.get(reverse('dashboard:projects'))
+        self.assertContains(response, 'Campus Ride Share')
+        self.assertNotContains(response, 'Someone else project')
+
+    def test_project_filters(self):
+        self.make_project()
+        self.make_project(title='Done Project', status=DashboardEntry.Status.COMPLETED, priority='')
+
+        in_progress = self.client.get(reverse('dashboard:projects'), {'status': DashboardEntry.Status.IN_PROGRESS})
+        self.assertContains(in_progress, 'Campus Ride Share')
+        self.assertNotContains(in_progress, 'Done Project')
+
+        completed = self.client.get(reverse('dashboard:projects'), {'status': DashboardEntry.Status.COMPLETED})
+        self.assertContains(completed, 'Done Project')
+        self.assertNotContains(completed, 'Campus Ride Share')
+
+        high = self.client.get(reverse('dashboard:projects'), {'priority': DashboardEntry.Priority.HIGH})
+        self.assertContains(high, 'Campus Ride Share')
+        self.assertNotContains(high, 'Done Project')
+
+        stack = self.client.get(reverse('dashboard:projects'), {'q': 'PostgreSQL'})
+        self.assertContains(stack, 'Campus Ride Share')
+
+    def test_project_stats_are_computed(self):
+        self.make_project()
+        self.make_project(title='Finished', status=DashboardEntry.Status.COMPLETED, progress=100)
+        response = self.client.get(reverse('dashboard:projects'))
+        self.assertEqual(response.context['total'], 2)
+        self.assertEqual(response.context['active'], 1)
+        self.assertEqual(response.context['completed'], 1)
+        self.assertEqual(response.context['avg_progress'], 83)
+    def test_period_end_before_start_is_rejected(self):
+        response = self.client.post(
+            reverse('dashboard:add_entry', kwargs={'kind': DashboardEntry.Kind.PROJECT}),
+            {
+                'title': 'Bad Dates',
+                'description': 'x',
+                'status': DashboardEntry.Status.NEW,
+                'progress': 0,
+                'period_start': '2026-06-01',
+                'period_end': '2026-01-01',
+                'tech_stack': '',
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(DashboardEntry.objects.filter(title='Bad Dates').exists())
+
+    def test_popular_tech_is_aggregated(self):
+        self.make_project()
+        self.make_project(title='Second', tech_stack='Django, Docker')
+        response = self.client.get(reverse('dashboard:projects'))
+        tech = dict(response.context['popular_tech'])
+        self.assertEqual(tech['Django'], 2)
+        self.assertEqual(tech['Docker'], 1)
+
+    def test_notes_do_not_receive_project_fields(self):
+        self.client.post(
+            reverse('dashboard:add_entry', kwargs={'kind': DashboardEntry.Kind.NOTE}),
+            {'title': 'Just a note', 'description': 'Plain'},
+        )
+        note = DashboardEntry.objects.get(title='Just a note')
+        self.assertEqual(note.role, '')
+        self.assertEqual(note.tech_stack, '')
+        self.assertEqual(note.priority, '')

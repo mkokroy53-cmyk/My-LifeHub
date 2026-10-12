@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Projects · My-LifeHub{% endblock %}
+{% block breadcrumb %}Projects{% endblock %}
+{% block content %}
+
+<section class="projects-hero">
+  <div class="projects-hero-copy">
+    <span class="section-kicker">YOUR BUILD LOG</span>
+    <h1>Projects</h1>
+    <p>
+      Track every build — what it does, who it is for, the period you worked on
+      it, the stack you used, and how far along it is.
+    </p>
+  </div>
+  <a
+    class="primary-button projects-new-btn"
+    href="{% url 'dashboard:add_entry' 'project' %}"
+  >
+    <span>New project</span><span aria-hidden="true">＋</span>
+  </a>
+</section>
+
+<section class="projects-stats" aria-label="Project statistics">
+  <div class="projects-stat-card">
+    <span class="diary-stat-icon icon-blue" aria-hidden="true">▧</span>
+    <div><strong>{{ total }}</strong><span>Total projects</span></div>
+  </div>
+  <div class="projects-stat-card">
+    <span class="diary-stat-icon icon-coral" aria-hidden="true">▶</span>
+    <div><strong>{{ active }}</strong><span>In progress</span></div>
+  </div>
+  <div class="projects-stat-card">
+    <span class="diary-stat-icon icon-lime" aria-hidden="true">✓</span>
+    <div><strong>{{ completed }}</strong><span>Completed</span></div>
+  </div>
+  <div class="projects-stat-card">
+    <span class="diary-stat-icon icon-blue" aria-hidden="true">◔</span>
+    <div><strong>{{ avg_progress }}%</strong><span>Average progress</span></div>
+  </div>
+</section>
+
+<section class="projects-toolbar">
+  <form method="get" class="projects-filter-form">
+    <input
+      type="search"
+      name="q"
+      value="{{ query }}"
+      placeholder="Search by name, client, stack..."
+      aria-label="Search projects"
+    />
+    <select name="status" data-filter-select aria-label="Filter by status">
+      <option value="">All statuses</option>
+      {% for value, label in status_choices %}
+      <option
+        value="{{ value }}"
+        {%
+        if
+        selected_status=""
+        ="value"
+        %}selected{%
+        endif
+        %}
+      >
+        {{ label }}
+      </option>
+      {% endfor %}
+    </select>
+    <select name="priority" data-filter-select aria-label="Filter by priority">
+      <option value="">Any priority</option>
+      {% for value, label in priority_choices %}
+      <option
+        value="{{ value }}"
+        {%
+        if
+        selected_priority=""
+        ="value"
+        %}selected{%
+        endif
+        %}
+      >
+        {{ label }}
+      </option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="primary-button">Search</button>
+    {% if query or selected_status or selected_priority %}
+    <a class="secondary-button" href="{% url 'dashboard:projects' %}">Clear</a>
+    {% endif %}
+  </form>
+</section>
+
+{% if popular_tech %}
+<section class="projects-tech-strip" aria-label="Technologies used">
+  <span class="section-kicker">STACKS YOU WORK WITH</span>
+  <div class="tech-chip-row">
+    {% for tech, count in popular_tech %}
+    <a class="tech-chip" href="{% url 'dashboard:projects' %}?q={{ tech }}"
+      >{{ tech }} <b>{{ count }}</b></a
+    >
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="project-board" aria-label="Project list">
+  {% if projects %} {% for project in projects %}
+  <article class="project-card priority-{{ project.priority|default:'none' }}">
+    <header class="project-card-header">
+      <div class="project-card-badges">
+        <span class="project-status status-{{ project.status }}"
+          >{{ project.get_status_display }}</span
+        >
+        {% if project.priority %}<span
+          class="project-priority pri-{{ project.priority }}"
+          >{{ project.get_priority_display }}</span
+        >{% endif %} {% if project.is_pinned %}<span class="pinned-tag"
+          >★ Pinned</span
+        >{% endif %}
+      </div>
+      {% if project.period_label %}<span class="project-period"
+        >{{ project.period_label }}</span
+      >{% endif %}
+    </header>
+
+    <h2 class="project-card-title">
+      <a href="{% url 'dashboard:entry_detail' project.kind project.id %}"
+        >{{ project.title }}</a
+      >
+    </h2>
+
+    {% if project.description %}
+    <p class="project-card-desc">{{ project.description|truncatechars:200 }}</p>
+    {% endif %}
+
+    <dl class="project-facts">
+      {% if project.role %}
+      <div>
+        <dt>Role</dt>
+        <dd>{{ project.role }}</dd>
+      </div>
+      {% endif %} {% if project.client %}
+      <div>
+        <dt>Client / For</dt>
+        <dd>{{ project.client }}</dd>
+      </div>
+      {% endif %} {% if project.duration_label %}
+      <div>
+        <dt>Duration</dt>
+        <dd>{{ project.duration_label }}</dd>
+      </div>
+      {% endif %} {% if project.target_date %}
+      <div>
+        <dt>Target</dt>
+        <dd>{{ project.target_date|date:"j M Y" }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+
+    {% if project.tech_list %}
+    <div class="project-tech-list">
+      {% for tech in project.tech_list %}<span class="tech-pill"
+        >{{ tech }}</span
+      >{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="project-progress-row">
+      <div
+        class="progress-track"
+        role="progressbar"
+        aria-label="{{ project.title }} progress"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="{{ project.progress }}"
+        data-progress="{{ project.progress }}"
+        style="--progress: {{ project.progress }}%"
+      >
+        <span class="progress-fill"></span>
+      </div>
+      <span class="project-progress-value">{{ project.progress }}%</span>
+    </div>
+
+    <footer class="project-card-footer">
+      <div class="project-links">
+        {% if project.repo_url %}<a
+          class="project-chip-link"
+          href="{{ project.repo_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Repo ↗</a
+        >{% endif %} {% if project.live_url %}<a
+          class="project-chip-link"
+          href="{{ project.live_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Live ↗</a
+        >{% endif %} {% if project.notes_url %}<a
+          class="project-chip-link"
+          href="{{ project.notes_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Docs ↗</a
+        >{% endif %}
+      </div>
+      <div class="project-actions">
+        <a
+          class="text-link"
+          href="{% url 'dashboard:edit_entry' project.kind project.id %}"
+          >Edit</a
+        >
+        <a
+          class="text-link"
+          href="{% url 'dashboard:entry_detail' project.kind project.id %}"
+          >Open <span aria-hidden="true">↗</span></a
+        >
+      </div>
+    </footer>
+  </article>
+  {% endfor %} {% else %}
+  <div class="quiet-empty projects-empty">
+    <span class="empty-mark">▧</span>
+    <div>
+      <strong
+        >{% if query or selected_status or selected_priority %}No projects match
+        your filters.{% else %}No projects yet.{% endif %}</strong
+      >
+      <p>
+        Add your first project to keep its scope, period, stack, and progress in
+        one place.
+      </p>
+    </div>
+    <a class="text-link" href="{% url 'dashboard:add_entry' 'project' %}"
+      >Create a project <span aria-hidden="true">↗</span></a
+    >
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -3,7 +3,7 @@
 {% block breadcrumb %}{{ kind_label }}{% endblock %}
 {% block content %}
 <section class="form-page-heading">
-    <a class="back-link" href="{% if entry.kind == 'diary' %}{% url 'dashboard:diary' %}{% else %}{% url 'dashboard:entries_by_kind' entry.kind %}{% endif %}">← Back to {{ kind_label }}</a>
+    <a class="back-link" href="{% if entry.kind == 'diary' %}{% url 'dashboard:diary' %}{% elif entry.kind == 'project' %}{% url 'dashboard:projects' %}{% else %}{% url 'dashboard:entries_by_kind' entry.kind %}{% endif %}">← Back to {{ kind_label }}</a>
     <h1>{{ entry.title }}</h1>
     <p>{{ entry.get_kind_display }} saved in your private record.</p>
 </section>
@@ -13,49 +13,71 @@
         <div class="entry-tag-row">
             <span class="entry-kind-tag">{{ entry.get_kind_display }}</span>
             {% if entry.mood %}<span class="mood-pill mood-{{ entry.mood }}">{{ entry.get_mood_display }}</span>{% endif %}
+            {% if entry.priority %}<span class="project-priority pri-{{ entry.priority }}">{{ entry.get_priority_display }} priority</span>{% endif %}
             {% if entry.is_pinned %}<span class="pinned-tag">★ Pinned</span>{% endif %}
         </div>
-        <span class="entry-status">{{ entry.get_status_display }}</span>
+        <span class="project-status status-{{ entry.status }}">{{ entry.get_status_display }}</span>
     </div>
+
+    {% if entry.kind == 'project' %}
+    <div class="project-detail-meta">
+        {% if entry.period_label %}<div class="project-meta-item"><span>Period</span><strong>{{ entry.period_label }}</strong></div>{% endif %}
+        {% if entry.duration_label %}<div class="project-meta-item"><span>Duration</span><strong>{{ entry.duration_label }}</strong></div>{% endif %}
+        {% if entry.role %}<div class="project-meta-item"><span>My role</span><strong>{{ entry.role }}</strong></div>{% endif %}
+        {% if entry.client %}<div class="project-meta-item"><span>Client / For</span><strong>{{ entry.client }}</strong></div>{% endif %}
+    </div>
+    {% endif %}
 
     {% if entry.description %}
         <div class="detail-copy">
-            <h2>{% if entry.kind == 'diary' %}Entry{% else %}Details{% endif %}</h2>
+            <h2>{% if entry.kind == 'diary' %}Entry{% elif entry.kind == 'project' %}Overview{% else %}Details{% endif %}</h2>
             <p>{{ entry.description|linebreaksbr }}</p>
+        </div>
+    {% endif %}
+
+    {% if entry.kind == 'project' and entry.tech_list %}
+    <div class="detail-copy">
+        <h2>Tech stack</h2>
+        <div class="project-tech-list">{% for tech in entry.tech_list %}<span class="tech-pill">{{ tech }}</span>{% endfor %}</div>
+    </div>
+    {% endif %}
+
+    {% if entry.kind == 'project' %}
+        {% if entry.repo_url or entry.live_url or entry.notes_url %}
+        <div class="detail-copy">
+            <h2>Links</h2>
+            <div class="project-links">
+                {% if entry.repo_url %}<a class="project-chip-link" href="{{ entry.repo_url }}" target="_blank" rel="noopener noreferrer">Repository ↗</a>{% endif %}
+                {% if entry.live_url %}<a class="project-chip-link" href="{{ entry.live_url }}" target="_blank" rel="noopener noreferrer">Live site ↗</a>{% endif %}
+                {% if entry.notes_url %}<a class="project-chip-link" href="{{ entry.notes_url }}" target="_blank" rel="noopener noreferrer">Documentation ↗</a>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+        <div class="detail-copy">
+            <h2>Progress</h2>
+            <div class="project-progress-row">
+                <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ entry.progress }}" data-progress="{{ entry.progress }}" style="--progress: {{ entry.progress }}%"><span class="progress-fill"></span></div>
+                <span class="project-progress-value">{{ entry.progress }}%</span>
+            </div>
         </div>
     {% endif %}
 
     <dl class="entry-metadata">
         {% if entry.target_date %}
-        <div>
-            <dt>Target date</dt>
-            <dd>{{ entry.target_date|date:"F d, Y" }}</dd>
-        </div>
+        <div><dt>Target date</dt><dd>{{ entry.target_date|date:"F d, Y" }}</dd></div>
         {% endif %}
         {% if entry.kind == 'goal' %}
-        <div>
-            <dt>Progress</dt>
-            <dd>{{ entry.progress }}%</dd>
-        </div>
+        <div><dt>Progress</dt><dd>{{ entry.progress }}%</dd></div>
         {% endif %}
         {% if entry.mood %}
-        <div>
-            <dt>Mood</dt>
-            <dd>{{ entry.get_mood_display }}</dd>
-        </div>
+        <div><dt>Mood</dt><dd>{{ entry.get_mood_display }}</dd></div>
         {% endif %}
-        <div>
-            <dt>Created</dt>
-            <dd>{{ entry.created_at|date:"F d, Y" }}</dd>
-        </div>
-        <div>
-            <dt>Updated</dt>
-            <dd>{{ entry.updated_at|date:"F d, Y" }}</dd>
-        </div>
+        <div><dt>Created</dt><dd>{{ entry.created_at|date:"F d, Y" }}</dd></div>
+        <div><dt>Updated</dt><dd>{{ entry.updated_at|date:"F d, Y" }}</dd></div>
     </dl>
 
     <div class="form-actions">
-        <a class="secondary-button" href="{% if entry.kind == 'diary' %}{% url 'dashboard:diary' %}{% else %}{% url 'dashboard:entries_by_kind' entry.kind %}{% endif %}">Back to list</a>
+        <a class="secondary-button" href="{% if entry.kind == 'diary' %}{% url 'dashboard:diary' %}{% elif entry.kind == 'project' %}{% url 'dashboard:projects' %}{% else %}{% url 'dashboard:entries_by_kind' entry.kind %}{% endif %}">Back to list</a>
         <form method="post" action="{% url 'dashboard:toggle_pin' entry.kind entry.id %}" class="inline-form">{% csrf_token %}<button class="secondary-button" type="submit">{% if entry.is_pinned %}Unpin{% else %}Pin{% endif %}</button></form>
         <a class="secondary-button" href="{% url 'dashboard:delete_entry' entry.kind entry.id %}">Delete</a>
         <a class="primary-button button-link" href="{% url 'dashboard:edit_entry' entry.kind entry.id %}">Edit record <span aria-hidden="true">↗</span></a>

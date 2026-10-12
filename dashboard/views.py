@@ -468,6 +468,74 @@ def add_quote(request):
 
 
 @login_required
+def projects_workspace(request):
+    """Projects home: status board, stats, tech filters, and progress overview."""
+    from django.db.models import Q as _Q
+
+    query = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '').strip()
+    priority = request.GET.get('priority', '').strip()
+
+    projects = DashboardEntry.objects.filter(
+        user=request.user,
+        kind=DashboardEntry.Kind.PROJECT,
+    )
+    all_projects = projects
+
+    if query:
+        projects = projects.filter(
+            _Q(title__icontains=query)
+            | _Q(description__icontains=query)
+            | _Q(tech_stack__icontains=query)
+            | _Q(client__icontains=query)
+            | _Q(role__icontains=query)
+        )
+    if status in DashboardEntry.Status.values:
+        projects = projects.filter(status=status)
+    if priority in DashboardEntry.Priority.values:
+        projects = projects.filter(priority=priority)
+
+    total = all_projects.count()
+    active = all_projects.filter(status=DashboardEntry.Status.IN_PROGRESS).count()
+    completed = all_projects.filter(status=DashboardEntry.Status.COMPLETED).count()
+    avg_progress = 0
+    if total:
+        total_progress = sum(all_projects.values_list('progress', flat=True))
+        avg_progress = int(total_progress / total + 0.5)
+
+    status_counts = []
+    for value, label in DashboardEntry.Status.choices:
+        count = all_projects.filter(status=value).count()
+        status_counts.append({'value': value, 'label': label, 'count': count})
+
+    # Collect every technology used across projects
+    tech_counter = {}
+    for project in all_projects:
+        for tech in project.tech_list:
+            tech_counter[tech] = tech_counter.get(tech, 0) + 1
+    popular_tech = sorted(tech_counter.items(), key=lambda item: (-item[1], item[0]))[:12]
+
+    return render(
+        request,
+        'dashboard/projects.html',
+        {
+            'projects': projects,
+            'query': query,
+            'selected_status': status,
+            'selected_priority': priority,
+            'status_choices': DashboardEntry.Status.choices,
+            'priority_choices': DashboardEntry.Priority.choices,
+            'status_counts': status_counts,
+            'popular_tech': popular_tech,
+            'total': total,
+            'active': active,
+            'completed': completed,
+            'avg_progress': avg_progress,
+        },
+    )
+
+
+@login_required
 def diary_workspace(request):
     """Modern diary home: stats, mood insights, calendar heatmap, recent entries."""
     today = timezone.localdate()
