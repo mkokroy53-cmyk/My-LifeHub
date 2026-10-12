@@ -3,20 +3,24 @@
 {% block breadcrumb %}{{ kind_label }}{% endblock %}
 {% block content %}
 <section class="form-page-heading">
-    <a class="back-link" href="{% url 'dashboard:entries_by_kind' entry.kind %}">← Back to {{ kind_label }}</a>
+    <a class="back-link" href="{% if entry.kind == 'diary' %}{% url 'dashboard:diary' %}{% else %}{% url 'dashboard:entries_by_kind' entry.kind %}{% endif %}">← Back to {{ kind_label }}</a>
     <h1>{{ entry.title }}</h1>
     <p>{{ entry.get_kind_display }} saved in your private record.</p>
 </section>
 
 <article class="entry-detail-card">
     <div class="entry-detail-top">
-        <span class="entry-kind-tag">{{ entry.get_kind_display }}</span>
+        <div class="entry-tag-row">
+            <span class="entry-kind-tag">{{ entry.get_kind_display }}</span>
+            {% if entry.mood %}<span class="mood-pill mood-{{ entry.mood }}">{{ entry.get_mood_display }}</span>{% endif %}
+            {% if entry.is_pinned %}<span class="pinned-tag">★ Pinned</span>{% endif %}
+        </div>
         <span class="entry-status">{{ entry.get_status_display }}</span>
     </div>
 
     {% if entry.description %}
         <div class="detail-copy">
-            <h2>Details</h2>
+            <h2>{% if entry.kind == 'diary' %}Entry{% else %}Details{% endif %}</h2>
             <p>{{ entry.description|linebreaksbr }}</p>
         </div>
     {% endif %}
@@ -28,10 +32,16 @@
             <dd>{{ entry.target_date|date:"F d, Y" }}</dd>
         </div>
         {% endif %}
-        {% if entry.progress %}
+        {% if entry.kind == 'goal' %}
         <div>
             <dt>Progress</dt>
             <dd>{{ entry.progress }}%</dd>
+        </div>
+        {% endif %}
+        {% if entry.mood %}
+        <div>
+            <dt>Mood</dt>
+            <dd>{{ entry.get_mood_display }}</dd>
         </div>
         {% endif %}
         <div>
@@ -45,7 +55,8 @@
     </dl>
 
     <div class="form-actions">
-        <a class="secondary-button" href="{% url 'dashboard:entries_by_kind' entry.kind %}">Back to list</a>
+        <a class="secondary-button" href="{% if entry.kind == 'diary' %}{% url 'dashboard:diary' %}{% else %}{% url 'dashboard:entries_by_kind' entry.kind %}{% endif %}">Back to list</a>
+        <form method="post" action="{% url 'dashboard:toggle_pin' entry.kind entry.id %}" class="inline-form">{% csrf_token %}<button class="secondary-button" type="submit">{% if entry.is_pinned %}Unpin{% else %}Pin{% endif %}</button></form>
         <a class="secondary-button" href="{% url 'dashboard:delete_entry' entry.kind entry.id %}">Delete</a>
         <a class="primary-button button-link" href="{% url 'dashboard:edit_entry' entry.kind entry.id %}">Edit record <span aria-hidden="true">↗</span></a>
     </div>

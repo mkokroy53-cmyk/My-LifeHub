@@ -5,7 +5,7 @@
 <section class="form-page-heading">
     <a class="back-link" href="{% url 'dashboard:index' %}">← Back to overview</a>
     <h1>Your life archive</h1>
-    <p>Your private collection of notes, memories, goals, and ideas — all in one thoughtful place.</p>
+    <p>Your private collection of diary entries, notes, projects, goals, and achievements — all in one thoughtful place.</p>
 </section>
 
 <section class="library-grid" aria-label="Life archive overview">
@@ -63,7 +63,7 @@
             <strong>Your archive is still waiting for its first chapter.</strong>
             <p>Start with an idea, a goal, or a quick note.</p>
         </div>
-        <a class="text-link" href="{% url 'dashboard:add_entry' 'idea' %}">Add an idea <span aria-hidden="true">↗</span></a>
+        <a class="text-link" href="{% url 'dashboard:add_entry' 'note' %}">Add a note <span aria-hidden="true">↗</span></a>
     </div>
     {% endif %}
 </section>

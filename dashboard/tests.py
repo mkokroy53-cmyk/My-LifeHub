@@ -29,21 +29,23 @@ class DashboardAccessTests(TestCase):
         self.assertTemplateUsed(response, 'dashboard/index.html')
         self.assertContains(response, 'data-immersive-navigation')
         self.assertContains(response, 'data-nav-section="Learning"')
-        self.assertContains(response, 'data-nav-section="Entertainment"')
+        self.assertContains(response, 'data-nav-section="Diary"')
+        self.assertNotContains(response, 'data-nav-section="Entertainment"')
 
-    def test_settings_and_entertainment_sections_are_real_pages(self):
+    def test_settings_and_diary_sections_are_real_pages(self):
         user = get_user_model().objects.create_user(username='section-reader', password='a-strong-test-password')
         self.client.force_login(user)
 
         settings_response = self.client.get(reverse('dashboard:settings'))
-        entertainment_response = self.client.get(
-            reverse('dashboard:entries_by_kind', kwargs={'kind': 'entertainment'})
-        )
+        diary_response = self.client.get(reverse('dashboard:diary'))
+        learning_response = self.client.get(reverse('dashboard:learning'))
 
         self.assertEqual(settings_response.status_code, 200)
         self.assertContains(settings_response, 'Settings')
-        self.assertEqual(entertainment_response.status_code, 200)
-        self.assertContains(entertainment_response, 'Entertainment')
+        self.assertEqual(diary_response.status_code, 200)
+        self.assertContains(diary_response, 'diary')
+        self.assertEqual(learning_response.status_code, 200)
+        self.assertContains(learning_response, 'Learning library')
 
     def test_anonymous_user_cannot_export_personal_data(self):
         response = self.client.get(reverse('dashboard:export'))
@@ -281,9 +283,12 @@ class PrivatePDFTests(TestCase):
         return SimpleUploadedFile(name, content, content_type='application/pdf')
 
     def test_pdf_upload_and_download_are_private_to_the_owner(self):
-        upload_response = self.client.post(reverse('dashboard:files'), {'pdf': self.make_pdf()})
+        upload_response = self.client.post(
+            reverse('dashboard:add_resource'),
+            {'title': 'Personal PDF', 'category': 'other', 'file': self.make_pdf()},
+        )
 
-        self.assertRedirects(upload_response, reverse('dashboard:files'))
+        self.assertRedirects(upload_response, reverse('dashboard:learning'))
         upload = PrivatePDFUpload.objects.get(original_filename='personal.pdf')
         self.assertEqual(upload.user, self.user)
         self.assertTrue(upload.file.name.startswith(f'private_uploads/{self.user.pk}/'))
@@ -291,12 +296,13 @@ class PrivatePDFTests(TestCase):
         PrivatePDFUpload.objects.create(
             user=self.other_user,
             original_filename='other.pdf',
+            title='Other file',
             file=other_upload_file,
             file_size=other_upload_file.size,
         )
-        library_response = self.client.get(reverse('dashboard:files'))
-        self.assertContains(library_response, 'personal.pdf')
-        self.assertNotContains(library_response, 'other.pdf')
+        library_response = self.client.get(reverse('dashboard:learning'))
+        self.assertContains(library_response, 'Personal PDF')
+        self.assertNotContains(library_response, 'Other file')
 
         download_response = self.client.get(reverse('dashboard:download_file', kwargs={'upload_id': upload.pk}))
         self.assertEqual(download_response.status_code, 200)
@@ -309,10 +315,14 @@ class PrivatePDFTests(TestCase):
         self.assertEqual(self.client.post(reverse('dashboard:delete_file', kwargs={'upload_id': upload.pk})).status_code, 404)
         self.assertTrue(PrivatePDFUpload.objects.filter(pk=upload.pk).exists())
 
+    def test_legacy_files_url_redirects_to_learning(self):
+        response = self.client.get(reverse('dashboard:files'))
+        self.assertRedirects(response, reverse('dashboard:learning'))
+
     def test_upload_rejects_fake_pdf_content(self):
         response = self.client.post(
-            reverse('dashboard:files'),
-            {'pdf': self.make_pdf(content=b'not a PDF')},
+            reverse('dashboard:add_resource'),
+            {'title': 'Fake', 'category': 'other', 'file': self.make_pdf(content=b'not a PDF')},
         )
 
         self.assertEqual(response.status_code, 200)
@@ -375,3 +385,175 @@ class PersonalExportTests(TestCase):
             self.assertEqual(data['files'][0]['archive_path'], archive_path)
             self.assertEqual(archive.read(archive_path), b'%PDF-1.7\nbackup file')
             self.assertNotIn(b'Another user note', data_bytes)
+
+
+
+class DiaryWorkspaceTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username='diary-owner', password='a-strong-test-password')
+        self.other_user = user_model.objects.create_user(username='diary-other', password='a-strong-test-password')
+        self.client.force_login(self.user)
+
+    def test_diary_workspace_renders_with_stats_and_calendar(self):
+        DashboardEntry.objects.create(
+            user=self.user,
+            kind=DashboardEntry.Kind.DIARY,
+            title='A good day',
+            description='Today was productive.',
+            mood=DashboardEntry.Mood.GREAT,
+        )
+        response = self.client.get(reverse('dashboard:diary'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'A good day')
+        self.assertContains(response, 'Day writing streak')
+        self.assertContains(response, 'Writing calendar')
+
+    def test_diary_entries_are_private_to_the_owner(self):
+        DashboardEntry.objects.create(
+            user=self.other_user,
+            kind=DashboardEntry.Kind.DIARY,
+            title='Someone else entry',
+        )
+        response = self.client.get(reverse('dashboard:diary'))
+        self.assertNotContains(response, 'Someone else entry')
+
+    def test_diary_entry_saves_mood_and_persists(self):
+        response = self.client.post(
+            reverse('dashboard:add_entry', kwargs={'kind': DashboardEntry.Kind.DIARY}),
+            {'title': 'Moody day', 'description': 'Felt calm.', 'mood': 'good'},
+        )
+        self.assertRedirects(response, reverse('dashboard:index'))
+        entry = DashboardEntry.objects.get(title='Moody day')
+        self.assertEqual(entry.mood, 'good')
+        self.assertEqual(entry.kind, DashboardEntry.Kind.DIARY)
+
+    def test_pin_toggle_persists(self):
+        entry = DashboardEntry.objects.create(
+            user=self.user,
+            kind=DashboardEntry.Kind.DIARY,
+            title='Pin me',
+        )
+        self.assertFalse(entry.is_pinned)
+        self.client.post(reverse('dashboard:toggle_pin', kwargs={'kind': entry.kind, 'entry_id': entry.pk}))
+        entry.refresh_from_db()
+        self.assertTrue(entry.is_pinned)
+        self.client.post(reverse('dashboard:toggle_pin', kwargs={'kind': entry.kind, 'entry_id': entry.pk}))
+        entry.refresh_from_db()
+        self.assertFalse(entry.is_pinned)
+
+    def test_user_cannot_pin_another_users_entry(self):
+        entry = DashboardEntry.objects.create(
+            user=self.other_user,
+            kind=DashboardEntry.Kind.DIARY,
+            title='Not yours',
+        )
+        response = self.client.post(
+            reverse('dashboard:toggle_pin', kwargs={'kind': entry.kind, 'entry_id': entry.pk})
+        )
+        self.assertEqual(response.status_code, 404)
+        entry.refresh_from_db()
+        self.assertFalse(entry.is_pinned)
+
+
+class LearningLibraryTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username='learner', password='a-strong-test-password')
+        self.other_user = user_model.objects.create_user(username='learner-other', password='a-strong-test-password')
+        self.client.force_login(self.user)
+        self.media_dir = TemporaryDirectory()
+        media_settings = override_settings(MEDIA_ROOT=self.media_dir.name)
+        media_settings.enable()
+        self.addCleanup(self.media_dir.cleanup)
+        self.addCleanup(media_settings.disable)
+
+    def make_pdf(self, name='notes.pdf', content=b'%PDF-1.7\nlearning material'):
+        return SimpleUploadedFile(name, content, content_type='application/pdf')
+
+    def test_learning_library_renders(self):
+        response = self.client.get(reverse('dashboard:learning'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Learning library')
+
+    def test_upload_resource_persists_with_metadata(self):
+        response = self.client.post(
+            reverse('dashboard:add_resource'),
+            {
+                'title': 'Data Structures Notes',
+                'category': 'lecture',
+                'notes': 'Week 1 to 4',
+                'file': self.make_pdf(),
+            },
+        )
+        self.assertRedirects(response, reverse('dashboard:learning'))
+        resource = PrivatePDFUpload.objects.get(title='Data Structures Notes')
+        self.assertEqual(resource.user, self.user)
+        self.assertEqual(resource.category, 'lecture')
+        self.assertEqual(resource.original_filename, 'notes.pdf')
+        self.assertEqual(resource.notes, 'Week 1 to 4')
+
+    def test_resources_are_private_to_the_owner(self):
+        PrivatePDFUpload.objects.create(
+            user=self.other_user,
+            original_filename='private.pdf',
+            title='Other user material',
+            file=self.make_pdf('private.pdf'),
+            file_size=30,
+        )
+        response = self.client.get(reverse('dashboard:learning'))
+        self.assertNotContains(response, 'Other user material')
+
+    def test_category_filter_works(self):
+        PrivatePDFUpload.objects.create(
+            user=self.user,
+            original_filename='slides.pdf',
+            title='Chapter Slides',
+            category='slides',
+            file=self.make_pdf('slides.pdf'),
+            file_size=30,
+        )
+        response = self.client.get(reverse('dashboard:learning'), {'category': 'slides'})
+        self.assertContains(response, 'Chapter Slides')
+        response = self.client.get(reverse('dashboard:learning'), {'category': 'exam'})
+        self.assertNotContains(response, 'Chapter Slides')
+
+    def test_resource_detail_is_user_scoped(self):
+        resource = PrivatePDFUpload.objects.create(
+            user=self.other_user,
+            original_filename='secret.pdf',
+            title='Secret material',
+            file=self.make_pdf('secret.pdf'),
+            file_size=30,
+        )
+        response = self.client.get(reverse('dashboard:resource_detail', kwargs={'upload_id': resource.pk}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_non_pdf_upload_is_rejected(self):
+        bad_file = SimpleUploadedFile('notes.txt', b'just text', content_type='text/plain')
+        response = self.client.post(
+            reverse('dashboard:add_resource'),
+            {'title': 'Bad file', 'category': 'other', 'file': bad_file},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(PrivatePDFUpload.objects.filter(title='Bad file').exists())
+
+
+class QuoteRotationTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username='quote-owner', password='a-strong-test-password')
+        self.client.force_login(self.user)
+
+    def test_quote_of_the_day_is_deterministic_per_day(self):
+        DashboardQuote.objects.create(user=self.user, text='First quote')
+        DashboardQuote.objects.create(user=self.user, text='Second quote')
+        first = self.client.get(reverse('dashboard:index')).context['quote_of_day']
+        second = self.client.get(reverse('dashboard:index')).context['quote_of_day']
+        self.assertEqual(first.pk, second.pk)
+
+    def test_favorite_quotes_are_preferred(self):
+        DashboardQuote.objects.create(user=self.user, text='Normal quote')
+        favorite = DashboardQuote.objects.create(user=self.user, text='Favorite quote', is_favorite=True)
+        response = self.client.get(reverse('dashboard:index'))
+        self.assertEqual(response.context['quote_of_day'].pk, favorite.pk)

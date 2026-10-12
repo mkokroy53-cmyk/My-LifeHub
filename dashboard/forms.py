@@ -2,25 +2,61 @@ from pathlib import PurePosixPath
 
 from django import forms
 
-from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem
+from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
 
 
 class DashboardEntryForm(forms.ModelForm):
     class Meta:
         model = DashboardEntry
-        fields = ['title', 'description', 'target_date', 'status', 'progress']
+        fields = ['title', 'description', 'target_date', 'status', 'progress', 'mood', 'is_pinned']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'target_date': forms.DateInput(attrs={'type': 'date'}),
             'progress': forms.NumberInput(attrs={'min': 0, 'max': 100}),
         }
 
-    def __init__(self, *args, kind, **kwargs):
+    def __init__(self, *args, kind=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.kind = kind
         self.fields['title'].widget.attrs.update({'autofocus': True, 'maxlength': 180})
         if kind != DashboardEntry.Kind.GOAL:
             for field_name in ['target_date', 'status', 'progress']:
                 self.fields.pop(field_name)
+        if kind != DashboardEntry.Kind.DIARY:
+            for field_name in ['mood', 'is_pinned']:
+                self.fields.pop(field_name)
+        else:
+            self.fields['title'].label = 'Entry title'
+            self.fields['description'].label = 'Today\'s thoughts'
+            self.fields['description'].widget.attrs.update({'rows': 10, 'placeholder': 'Write freely about your day...'})
+
+
+class LearningResourceForm(forms.ModelForm):
+    class Meta:
+        model = PrivatePDFUpload
+        fields = ['title', 'category', 'notes', 'file']
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional notes about this material...'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['title'].widget.attrs.update({'autofocus': True, 'maxlength': 200})
+        self.fields['file'].label = 'PDF file'
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data.get('file')
+        if not uploaded_file:
+            raise forms.ValidationError('Choose a PDF file to upload.')
+        if PurePosixPath(uploaded_file.name.replace('\\', '/')).suffix.lower() != '.pdf':
+            raise forms.ValidationError('Choose a PDF file.')
+        if uploaded_file.size > 25 * 1024 * 1024:
+            raise forms.ValidationError('PDF files must be 25 MB or smaller.')
+        header = uploaded_file.read(1024)
+        uploaded_file.seek(0)
+        if b'%PDF-' not in header:
+            raise forms.ValidationError('This file does not have a valid PDF signature.')
+        return uploaded_file
 
 
 class DashboardScheduleForm(forms.ModelForm):

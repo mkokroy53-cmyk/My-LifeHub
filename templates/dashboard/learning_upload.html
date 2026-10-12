@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} · My-LifeHub{% endblock %}
+{% block breadcrumb %}{{ page_title }}{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% if is_edit %}{% url 'dashboard:resource_detail' resource.pk %}{% else %}{% url 'dashboard:learning' %}{% endif %}">← {% if is_edit %}Back to material{% else %}Back to learning library{% endif %}</a>
+    <span class="section-kicker">{% if is_edit %}UPDATE MATERIAL{% else %}ADD TO YOUR SHELF{% endif %}</span>
+    <h1>{{ page_title }}</h1>
+    <p>{% if is_edit %}Update the details for this learning material.{% else %}Upload a PDF and give it a title so you can find it fast later.{% endif %}</p>
+</section>
+
+<form method="post" enctype="multipart/form-data" class="workspace-form">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="form-field {% if field.name == 'notes' %}field-wide{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.name == 'file' %}<small>PDF only, up to 25 MB.</small>{% endif %}
+        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+    </div>
+    {% endfor %}
+    {% if form.non_field_errors %}<div class="form-alert field-wide">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-actions field-wide">
+        <a class="secondary-button" href="{% if is_edit %}{% url 'dashboard:resource_detail' resource.pk %}{% else %}{% url 'dashboard:learning' %}{% endif %}">Cancel</a>
+        <button class="primary-button" type="submit">{% if is_edit %}Save changes{% else %}Add to library{% endif %} <span aria-hidden="true">↗</span></button>
+    </div>
+</form>
+{% endblock %}

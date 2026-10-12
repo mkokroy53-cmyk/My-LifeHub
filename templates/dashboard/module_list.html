@@ -3,9 +3,9 @@
 {% block breadcrumb %}{{ kind_label }}{% endblock %}
 {% block content %}
 <section class="form-page-heading">
-    <a class="back-link" href="{% url 'dashboard:library' %}">← Back to archive</a>
+    <a class="back-link" href="{% if kind == 'diary' %}{% url 'dashboard:diary' %}{% elif kind == 'resource' %}{% url 'dashboard:learning' %}{% else %}{% url 'dashboard:library' %}{% endif %}">← {% if kind == 'diary' %}Back to diary{% elif kind == 'resource' %}Back to learning library{% else %}Back to archive{% endif %}</a>
     <h1>{{ kind_label }}</h1>
-    <p>Private records for this part of your life.</p>
+    <p>Private records for this part of your life. Everything stays until you edit or delete it.</p>
 </section>
 
 <section class="module-toolbar">
@@ -23,15 +23,20 @@
             <div class="module-entry-head">
                 <div>
                     <span class="entry-kind-tag">{{ entry.get_kind_display }}</span>
+                    {% if entry.is_pinned %}<span class="pinned-tag">★ Pinned</span>{% endif %}
                     <h2><a href="{% url 'dashboard:entry_detail' entry.kind entry.id %}">{{ entry.title }}</a></h2>
                 </div>
-                {% if entry.status %}<span class="entry-status">{{ entry.get_status_display }}</span>{% endif %}
+                {% if entry.mood %}<span class="mood-pill mood-{{ entry.mood }}">{{ entry.get_mood_display }}</span>{% endif %}
             </div>
             <p>{{ entry.description|default:"No description added yet."|truncatechars:180 }}</p>
             <div class="entry-meta">
                 {% if entry.target_date %}<span>Target: {{ entry.target_date|date:"M d, Y" }}</span>{% endif %}
-                {% if entry.progress %}<span>Progress: {{ entry.progress }}%</span>{% endif %}
+                {% if entry.kind == 'goal' %}<span>Progress: {{ entry.progress }}%</span>{% endif %}
                 <span>Updated {{ entry.updated_at|date:"M d, Y" }}</span>
+            </div>
+            <div class="module-card-actions">
+                <a class="text-link" href="{% url 'dashboard:entry_detail' entry.kind entry.id %}">Open <span aria-hidden="true">↗</span></a>
+                <a class="text-link" href="{% url 'dashboard:edit_entry' entry.kind entry.id %}">Edit</a>
             </div>
         </article>
         {% endfor %}

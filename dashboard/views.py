@@ -16,20 +16,17 @@ from django.views.decorators.http import require_http_methods
 
 from finance.models import FinanceTransaction
 
-from .forms import DashboardEntryForm, DashboardQuoteForm, DashboardScheduleForm, PrivatePDFUploadForm
+from .forms import DashboardEntryForm, DashboardQuoteForm, DashboardScheduleForm, LearningResourceForm, PrivatePDFUploadForm
 from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
 
 
 ENTRY_STATS = [
     (DashboardEntry.Kind.DIARY, 'Diary entries', 'icon-coral'),
     (DashboardEntry.Kind.NOTE, 'Notes', 'icon-blue'),
-    (DashboardEntry.Kind.RESOURCE, 'Learning resources', 'icon-lime'),
+    (DashboardEntry.Kind.RESOURCE, 'Learning library', 'icon-lime'),
     (DashboardEntry.Kind.PROJECT, 'Projects', 'icon-blue'),
     (DashboardEntry.Kind.GOAL, 'Goals', 'icon-lime'),
     (DashboardEntry.Kind.ACHIEVEMENT, 'Achievements', 'icon-coral'),
-    (DashboardEntry.Kind.MEMORY, 'Memories', 'icon-blue'),
-    (DashboardEntry.Kind.ENTERTAINMENT, 'Entertainment', 'icon-coral'),
-    (DashboardEntry.Kind.IDEA, 'Ideas', 'icon-lime'),
 ]
 
 MODULE_LABELS = {kind: label for kind, label, _ in ENTRY_STATS}
@@ -69,7 +66,14 @@ def index(request):
         for kind, label, tone in ENTRY_STATS
     ]
     quotes = list(DashboardQuote.objects.filter(user=request.user).order_by('id'))
-    quote_of_day = quotes[today.toordinal() % len(quotes)] if quotes else None
+    if quotes:
+        days_since_epoch = today.toordinal()
+        favorite_quotes = [q for q in quotes if q.is_favorite]
+        pool = favorite_quotes or quotes
+        quote_of_day = pool[days_since_epoch % len(pool)]
+        quote_of_day.has_alternatives = len(pool) > 1
+    else:
+        quote_of_day = None
     timetable = DashboardScheduleItem.objects.filter(
         user=request.user,
         kind=DashboardScheduleItem.Kind.TIMETABLE,
@@ -91,8 +95,7 @@ def index(request):
             'greeting': greeting,
             'today': today,
             'stats': stats,
-            'recent_entries': DashboardEntry.objects.filter(user=request.user)[:6],
-            'active_goals': DashboardEntry.objects.filter(
+            'recent_entries': DashboardEntry.objects.filter(user=request.user)[:6],            'active_goals': DashboardEntry.objects.filter(
                 user=request.user,
                 kind=DashboardEntry.Kind.GOAL,
             ).exclude(status__in=[DashboardEntry.Status.COMPLETED, DashboardEntry.Status.CANCELLED])[:4],
@@ -295,7 +298,7 @@ def edit_entry(request, kind, entry_id):
     return render(
         request,
         'dashboard/entry_form.html',
-        {'form': form, 'item_title': entry.get_kind_display(), 'entry': entry, 'is_edit': True},
+        {'form': form, 'item_title': entry.get_kind_display(), 'entry': entry, 'is_edit': True, 'kind': kind},
     )
 
 
@@ -316,26 +319,8 @@ def delete_entry(request, kind, entry_id):
 
 @login_required
 def files(request):
-    if request.method == 'POST':
-        form = PrivatePDFUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            uploaded_file = form.cleaned_data['pdf']
-            original_filename = PurePosixPath(uploaded_file.name.replace('\\', '/')).name[:255]
-            PrivatePDFUpload.objects.create(
-                user=request.user,
-                original_filename=original_filename,
-                file=uploaded_file,
-                file_size=uploaded_file.size,
-            )
-            messages.success(request, 'Your PDF has been uploaded privately.')
-            return redirect('dashboard:files')
-    else:
-        form = PrivatePDFUploadForm()
-    return render(
-        request,
-        'dashboard/files.html',
-        {'form': form, 'uploads': PrivatePDFUpload.objects.filter(user=request.user)},
-    )
+    # Legacy private-files page; redirects to the unified learning library.
+    return redirect('dashboard:learning')
 
 
 @login_required
@@ -441,7 +426,7 @@ def add_entry(request, kind):
         form = DashboardEntryForm(kind=kind)
 
     title = dict(DashboardEntry.Kind.choices)[kind]
-    return render(request, 'dashboard/entry_form.html', {'form': form, 'item_title': title})
+    return render(request, 'dashboard/entry_form.html', {'form': form, 'item_title': title, 'kind': kind})
 
 
 @login_required
@@ -479,3 +464,197 @@ def add_quote(request):
     else:
         form = DashboardQuoteForm()
     return render(request, 'dashboard/quote_form.html', {'form': form})
+
+
+
+@login_required
+def diary_workspace(request):
+    """Modern diary home: stats, mood insights, calendar heatmap, recent entries."""
+    today = timezone.localdate()
+    entries = DashboardEntry.objects.filter(
+        user=request.user,
+        kind=DashboardEntry.Kind.DIARY,
+    )
+
+    total_entries = entries.count()
+
+    # Streak calculation (consecutive days with an entry, ending today or yesterday)
+    entry_dates = set(entries.values_list('created_at__date', flat=True))
+    streak = 0
+    cursor = today
+    if cursor not in entry_dates:
+        cursor = today - timezone.timedelta(days=1)
+    while cursor in entry_dates:
+        streak += 1
+        cursor -= timezone.timedelta(days=1)
+
+    # This month count
+    month_entries = entries.filter(
+        created_at__year=today.year,
+        created_at__month=today.month,
+    ).count()
+
+    # Mood breakdown
+    mood_counts = {}
+    for value, label in DashboardEntry.Mood.choices:
+        count = entries.filter(mood=value).count()
+        if count:
+            mood_counts[value] = {'label': label, 'count': count}
+
+    # Calendar heatmap for current month
+    weeks = month_calendar.Calendar(firstweekday=0).monthdatescalendar(today.year, today.month)
+    heatmap = []
+    for week in weeks:
+        row = []
+        for day in week:
+            day_entries = [e for e in entries if timezone.localtime(e.created_at).date() == day]
+            row.append({
+                'date': day,
+                'in_month': day.month == today.month,
+                'is_today': day == today,
+                'count': len(day_entries),
+            })
+        heatmap.append(row)
+
+    pinned = entries.filter(is_pinned=True).order_by('-updated_at')[:5]
+    recent = entries.order_by('-created_at')[:12]
+    on_this_day = entries.filter(
+        created_at__month=today.month,
+        created_at__day=today.day,
+    ).exclude(created_at__date=today).order_by('-created_at')[:3]
+
+    return render(
+        request,
+        'dashboard/diary.html',
+        {
+            'today': today,
+            'total_entries': total_entries,
+            'streak': streak,
+            'month_entries': month_entries,
+            'mood_counts': mood_counts,
+            'heatmap': heatmap,
+            'weekday_names': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            'month_label': month_calendar.month_name[today.month],
+            'pinned': pinned,
+            'recent': recent,
+            'on_this_day': on_this_day,
+        },
+    )
+
+
+@login_required
+def learning_library(request):
+    """Learning home: PDF resources with categories, filter, and search."""
+    query = request.GET.get('q', '').strip()
+    category = request.GET.get('category', '').strip()
+
+    resources = PrivatePDFUpload.objects.filter(user=request.user)
+    if query:
+        resources = resources.filter(
+            Q(title__icontains=query)
+            | Q(original_filename__icontains=query)
+            | Q(notes__icontains=query)
+        )
+    if category in PrivatePDFUpload.Category.values:
+        resources = resources.filter(category=category)
+
+    total = PrivatePDFUpload.objects.filter(user=request.user).count()
+    total_size = sum(PrivatePDFUpload.objects.filter(user=request.user).values_list('file_size', flat=True))
+
+    category_counts = []
+    for value, label in PrivatePDFUpload.Category.choices:
+        count = PrivatePDFUpload.objects.filter(user=request.user, category=value).count()
+        category_counts.append({'value': value, 'label': label, 'count': count})
+
+    notes = DashboardEntry.objects.filter(
+        user=request.user,
+        kind=DashboardEntry.Kind.NOTE,
+    ).order_by('-updated_at')[:5]
+
+    return render(
+        request,
+        'dashboard/learning.html',
+        {
+            'resources': resources,
+            'query': query,
+            'selected_category': category,
+            'category_choices': PrivatePDFUpload.Category.choices,
+            'category_counts': category_counts,
+            'total': total,
+            'total_size': total_size,
+            'notes': notes,
+        },
+    )
+
+
+@login_required
+def add_resource(request):
+    """Upload a PDF into the learning library."""
+    if request.method == 'POST':
+        form = LearningResourceForm(request.POST, request.FILES)
+        if form.is_valid():
+            resource = form.save(commit=False)
+            resource.user = request.user
+            resource.original_filename = PurePosixPath(
+                resource.file.name.replace('\\', '/')
+            ).name[:255]
+            resource.file_size = resource.file.size
+            resource.save()
+            messages.success(request, f'"{resource.display_name}" added to your learning library.')
+            return redirect('dashboard:learning')
+    else:
+        form = LearningResourceForm()
+    return render(
+        request,
+        'dashboard/learning_upload.html',
+        {'form': form, 'page_title': 'Add learning material'},
+    )
+
+
+@login_required
+def resource_detail(request, upload_id):
+    resource = get_object_or_404(PrivatePDFUpload, user=request.user, pk=upload_id)
+    return render(
+        request,
+        'dashboard/resource_detail.html',
+        {'resource': resource},
+    )
+
+
+@login_required
+def edit_resource(request, upload_id):
+    resource = get_object_or_404(PrivatePDFUpload, user=request.user, pk=upload_id)
+    if request.method == 'POST':
+        form = LearningResourceForm(request.POST, request.FILES, instance=resource)
+        if form.is_valid():
+            updated = form.save(commit=False)
+            if 'file' in form.changed_data:
+                updated.original_filename = PurePosixPath(
+                    updated.file.name.replace('\\', '/')
+                ).name[:255]
+                updated.file_size = updated.file.size
+            updated.save()
+            messages.success(request, 'Learning material updated.')
+            return redirect('dashboard:resource_detail', upload_id=resource.pk)
+    else:
+        form = LearningResourceForm(instance=resource)
+    return render(
+        request,
+        'dashboard/learning_upload.html',
+        {'form': form, 'page_title': 'Edit learning material', 'resource': resource, 'is_edit': True},
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def toggle_pin(request, kind, entry_id):
+    """Toggle pinned state for an entry."""
+    if kind not in VALID_KINDS:
+        messages.error(request, 'That item type is not available.')
+        return redirect('dashboard:library')
+    entry = get_object_or_404(DashboardEntry, user=request.user, kind=kind, pk=entry_id)
+    if request.method == 'POST':
+        entry.is_pinned = not entry.is_pinned
+        entry.save(update_fields=['is_pinned', 'updated_at'])
+        messages.success(request, 'Pinned.' if entry.is_pinned else 'Unpinned.')
+    return redirect('dashboard:entry_detail', kind=kind, entry_id=entry.pk)

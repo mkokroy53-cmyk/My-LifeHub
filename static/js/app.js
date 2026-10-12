@@ -233,3 +233,58 @@ function updateScrollTopVisibility() {
 window.addEventListener('scroll', updateScrollTopVisibility, { passive: true });
 updateScrollTopVisibility();
 scrollTopButton?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' }));
+
+/* ==========================================================================
+   HISTORY NAVIGATION (back / forward)
+   ========================================================================== */
+const historyBackButton = document.querySelector('[data-history-back]');
+const historyForwardButton = document.querySelector('[data-history-forward]');
+
+historyBackButton?.addEventListener('click', () => {
+    document.body.classList.add('history-leaving');
+    window.history.back();
+});
+
+historyForwardButton?.addEventListener('click', () => {
+    document.body.classList.add('history-leaving');
+    window.history.forward();
+});
+
+/* Keyboard shortcuts: Alt+Left / Alt+Right */
+document.addEventListener('keydown', (event) => {
+    if (!event.altKey) return;
+    if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        window.history.back();
+    } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        window.history.forward();
+    }
+});
+
+/* Reflect a subtle loading state while navigating between pages */
+window.addEventListener('pageshow', () => document.body.classList.remove('history-leaving'));
+
+/* ==========================================================================
+   DIARY / LEARNING / QUOTE ENHANCEMENTS
+   ========================================================================== */
+document.querySelectorAll('[data-quote-refresh]').forEach((button) => {
+    button.addEventListener('click', () => {
+        button.classList.add('is-loading');
+        window.location.href = button.dataset.quoteRefresh;
+    });
+});
+
+document.querySelectorAll('[data-filter-select]').forEach((select) => {
+    select.addEventListener('change', () => select.form?.submit());
+});
+
+/* Auto-grow diary textarea */
+document.querySelectorAll('textarea[data-auto-grow]').forEach((textarea) => {
+    const grow = () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = `${Math.max(textarea.scrollHeight, 180)}px`;
+    };
+    textarea.addEventListener('input', grow);
+    grow();
+});

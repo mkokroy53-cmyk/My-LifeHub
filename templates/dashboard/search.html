@@ -5,7 +5,7 @@
 <section class="form-page-heading">
     <a class="back-link" href="{% url 'dashboard:index' %}">← Back to overview</a>
     <h1>Search your life</h1>
-    <p>Find archive records, schedule items, transactions, and private files in one place.</p>
+    <p>Find archive records, schedule items, transactions, and learning materials in one place.</p>
 </section>
 
 <section class="module-toolbar">
@@ -95,12 +95,12 @@
 
         {% if file_results %}
         <div class="search-section">
-            <h2>Private files</h2>
+            <h2>Learning materials</h2>
             <div class="module-list search-list">
                 {% for upload in file_results %}
                 <article class="module-entry-card">
                     <div class="module-entry-head">
-                        <div><span class="entry-kind-tag">PDF · {{ upload.file_size|filesizeformat }}</span><h2>{{ upload.original_filename }}</h2></div>
+                        <div><span class="entry-kind-tag">{{ upload.get_category_display }} · {{ upload.file_size|filesizeformat }}</span><h2><a href="{% url 'dashboard:resource_detail' upload.pk %}">{{ upload.display_name }}</a></h2></div>
                         <a class="secondary-button" href="{% url 'dashboard:download_file' upload.pk %}">Download</a>
                     </div>
                     <div class="entry-meta"><span>Added {{ upload.uploaded_at|date:"M d, Y" }}</span></div>

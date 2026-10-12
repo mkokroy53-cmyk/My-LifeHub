@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ resource.display_name }} · Learning library{% endblock %}
+{% block breadcrumb %}{{ resource.display_name }}{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:learning' %}">← Back to learning library</a>
+    <span class="section-kicker">{{ resource.get_category_display|upper }}</span>
+    <h1>{{ resource.display_name }}</h1>
+    <p>Added {{ resource.uploaded_at|date:"j F Y, g:i A" }} · {{ resource.file_size|filesizeformat }}</p>
+</section>
+
+<div class="resource-layout">
+    <section class="resource-panel">
+        <div class="resource-actions-bar">
+            <a class="primary-button" href="{% url 'dashboard:download_file' resource.pk %}">Download PDF <span aria-hidden="true">⇩</span></a>
+            <a class="secondary-button" href="{% url 'dashboard:edit_resource' resource.pk %}">Edit details</a>
+            <a class="secondary-button danger-outline" href="{% url 'dashboard:delete_file' resource.pk %}">Delete</a>
+        </div>
+
+        {% if resource.notes %}
+        <div class="detail-copy">
+            <h2>Notes</h2>
+            <p>{{ resource.notes|linebreaksbr }}</p>
+        </div>
+        {% endif %}
+
+        <dl class="entry-metadata">
+            <div><dt>Category</dt><dd>{{ resource.get_category_display }}</dd></div>
+            <div><dt>File name</dt><dd>{{ resource.original_filename }}</dd></div>
+            <div><dt>Size</dt><dd>{{ resource.file_size|filesizeformat }}</dd></div>
+            <div><dt>Added</dt><dd>{{ resource.uploaded_at|date:"j F Y" }}</dd></div>
+        </dl>
+    </section>
+
+    <aside class="resource-preview">
+        <span class="section-kicker">PREVIEW</span>
+        <div class="pdf-preview-frame">
+            <embed src="{% url 'dashboard:download_file' resource.pk %}" type="application/pdf" width="100%" height="520">
+            <p class="pdf-preview-fallback">Your browser cannot display the PDF inline. <a class="text-link" href="{% url 'dashboard:download_file' resource.pk %}">Download it instead <span aria-hidden="true">↗</span></a></p>
+        </div>
+    </aside>
+</div>
+{% endblock %}

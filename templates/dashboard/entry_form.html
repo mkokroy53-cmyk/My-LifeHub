@@ -2,10 +2,30 @@
 {% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} {{ item_title }} · My-LifeHub{% endblock %}
 {% block breadcrumb %}{% if is_edit %}Edit{% else %}Add{% endif %} {{ item_title }}{% endblock %}
 {% block content %}
-<section class="form-page-heading"><a class="back-link" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% else %}{% url 'dashboard:index' %}{% endif %}">← {% if entry %}Back to record{% else %}Back to overview{% endif %}</a><span class="section-kicker">{% if is_edit %}UPDATE YOUR RECORD{% else %}QUICK CAPTURE{% endif %}</span><h1>{% if is_edit %}Edit{% else %}Add a{% endif %} {{ item_title|lower }}</h1><p>{% if is_edit %}Update the details saved in your private archive.{% else %}Save it here now. You can build it out in its full workspace as that module arrives.{% endif %}</p></section>
-<form method="post" class="workspace-form">{% csrf_token %}
-    {% for field in form %}<div class="form-field {% if field.name == 'description' %}field-wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</div>{% endfor %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% else %}{% if kind == 'diary' %}{% url 'dashboard:diary' %}{% else %}{% url 'dashboard:index' %}{% endif %}{% endif %}">← {% if entry %}Back to record{% elif kind == 'diary' %}Back to diary{% else %}Back to overview{% endif %}</a>
+    <span class="section-kicker">{% if is_edit %}UPDATE YOUR RECORD{% else %}NEW {{ item_title|upper }}{% endif %}</span>
+    <h1>{% if is_edit %}Edit{% else %}Add a{% endif %} {{ item_title|lower }}</h1>
+    <p>{% if is_edit %}Update the details saved in your private archive.{% elif kind == 'diary' %}Write freely — this entry is saved privately and stays until you edit or delete it.{% else %}Fill in the details below and save. Everything you add is stored in your private archive.{% endif %}</p>
+</section>
+<form method="post" class="workspace-form{% if kind == 'diary' %} diary-form{% endif %}">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="form-field {% if field.name == 'description' or field.name == 'notes' %}field-wide{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% if field.name == 'description' and kind == 'diary' %}
+        <textarea name="{{ field.name }}" id="{{ field.id_for_label }}" rows="12" data-auto-grow placeholder="Write freely about your day...">{{ field.value|default:'' }}</textarea>
+        {% else %}
+        {{ field }}
+        {% endif %}
+        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+    </div>
+    {% endfor %}
     {% if form.non_field_errors %}<div class="form-alert field-wide">{{ form.non_field_errors }}</div>{% endif %}
-    <div class="form-actions field-wide"><a class="secondary-button" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% else %}{% url 'dashboard:index' %}{% endif %}">Cancel</a><button class="primary-button" type="submit">{% if is_edit %}Update{% else %}Save{% endif %} {{ item_title|lower }} <span aria-hidden="true">↗</span></button></div>
+    <div class="form-actions field-wide">
+        <a class="secondary-button" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% elif kind == 'diary' %}{% url 'dashboard:diary' %}{% else %}{% url 'dashboard:index' %}{% endif %}">Cancel</a>
+        <button class="primary-button" type="submit">{% if is_edit %}Update{% else %}Save{% endif %} {{ item_title|lower }} <span aria-hidden="true">↗</span></button>
+    </div>
 </form>
 {% endblock %}

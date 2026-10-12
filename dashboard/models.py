@@ -17,15 +17,19 @@ class DashboardEntry(models.Model):
 		PROJECT = 'project', 'Project'
 		GOAL = 'goal', 'Goal'
 		ACHIEVEMENT = 'achievement', 'Achievement'
-		MEMORY = 'memory', 'Memory'
-		ENTERTAINMENT = 'entertainment', 'Entertainment'
-		IDEA = 'idea', 'Idea'
 
 	class Status(models.TextChoices):
 		NEW = 'new', 'New'
 		IN_PROGRESS = 'in_progress', 'In progress'
 		COMPLETED = 'completed', 'Completed'
 		CANCELLED = 'cancelled', 'Cancelled'
+
+	class Mood(models.TextChoices):
+		GREAT = 'great', 'Great'
+		GOOD = 'good', 'Good'
+		NEUTRAL = 'neutral', 'Neutral'
+		LOW = 'low', 'Low'
+		ROUGH = 'rough', 'Rough'
 
 	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboard_entries')
 	kind = models.CharField(max_length=20, choices=Kind.choices, db_index=True)
@@ -34,6 +38,8 @@ class DashboardEntry(models.Model):
 	status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
 	progress = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
 	target_date = models.DateField(null=True, blank=True)
+	mood = models.CharField(max_length=12, choices=Mood.choices, blank=True)
+	is_pinned = models.BooleanField(default=False)
 	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -96,14 +102,31 @@ class DashboardQuote(models.Model):
 
 
 class PrivatePDFUpload(models.Model):
+	class Category(models.TextChoices):
+		LECTURE = 'lecture', 'Lecture notes'
+		TEXTBOOK = 'textbook', 'Textbook'
+		ASSIGNMENT = 'assignment', 'Assignment'
+		RESEARCH = 'research', 'Research paper'
+		SLIDES = 'slides', 'Slides'
+		EXAM = 'exam', 'Exam / past paper'
+		OTHER = 'other', 'Other'
+
 	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='private_pdf_uploads')
 	original_filename = models.CharField(max_length=255)
+	title = models.CharField(max_length=200, blank=True)
 	file = models.FileField(upload_to=private_pdf_upload_path)
 	file_size = models.PositiveIntegerField()
+	category = models.CharField(max_length=16, choices=Category.choices, default=Category.OTHER)
+	notes = models.TextField(blank=True)
+	is_pinned = models.BooleanField(default=False)
 	uploaded_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
 		ordering = ['-uploaded_at']
 
 	def __str__(self):
-		return self.original_filename
+		return self.title or self.original_filename
+
+	@property
+	def display_name(self):
+		return self.title or self.original_filename
