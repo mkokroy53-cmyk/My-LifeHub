@@ -151,8 +151,35 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Private user uploads (PDFs). On Render the local filesystem is ephemeral, so in
+# production these must live in an object store (S3-compatible, e.g. Cloudflare R2
+# or AWS S3). Set AWS_STORAGE_BUCKET_NAME to enable it; otherwise local disk is used.
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
+if AWS_STORAGE_BUCKET_NAME:
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'auto')
+    AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL') or None
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_QUERYSTRING_AUTH = True
+    AWS_DEFAULT_ACL = None
+    _default_storage = {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+        'OPTIONS': {
+            'bucket_name': AWS_STORAGE_BUCKET_NAME,
+            'region_name': AWS_S3_REGION_NAME,
+            'endpoint_url': AWS_S3_ENDPOINT_URL,
+            'signature_version': AWS_S3_SIGNATURE_VERSION,
+            'querystring_auth': True,
+            'default_acl': None,
+        },
+    }
+else:
+    _default_storage = {'BACKEND': 'django.core.files.storage.FileSystemStorage'}
+
 STORAGES = {
-    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'default': _default_storage,
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage' if not DEBUG else 'django.contrib.staticfiles.storage.StaticFilesStorage',
     },
