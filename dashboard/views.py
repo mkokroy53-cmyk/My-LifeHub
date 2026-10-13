@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Count, Q
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -479,6 +479,19 @@ def add_quote(request):
     else:
         form = DashboardQuoteForm()
     return render(request, 'dashboard/quote_form.html', {'form': form})
+
+
+@login_required
+def random_quote(request):
+    """Return the saved quotes as JSON so the quote spotlight can cycle in place."""
+    quotes = list(DashboardQuote.objects.filter(user=request.user).order_by('id'))
+    favorites = [quote for quote in quotes if quote.is_favorite]
+    pool = favorites or quotes
+    payload = [
+        {'text': quote.text, 'author': quote.author or '', 'favorite': quote.is_favorite}
+        for quote in pool
+    ]
+    return JsonResponse({'quotes': payload})
 
 
 

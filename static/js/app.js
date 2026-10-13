@@ -288,3 +288,95 @@ document.querySelectorAll('textarea[data-auto-grow]').forEach((textarea) => {
     textarea.addEventListener('input', grow);
     grow();
 });
+
+/* Quote of the day — cycles through the saved quotes without a page reload */
+document.querySelectorAll('[data-quote-shuffle]').forEach((button) => {
+    const panel = button.closest('.quote-spotlight');
+    const textNode = panel?.querySelector('.quote-text-inner');
+    const authorNode = panel?.querySelector('.quote-spotlight-author');
+    let quotes = [];
+
+    const shuffleUrl = button.dataset.quoteShuffleUrl;
+    if (!shuffleUrl) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const loadQuotes = () => {
+        if (quotes.length) return Promise.resolve(quotes);
+        return fetch(shuffleUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                quotes = Array.isArray(data?.quotes) ? data.quotes : [];
+                return quotes;
+            })
+            .catch(() => []);
+    };
+
+    const paint = (quote) => {
+        if (!textNode || !quote) return;
+        const apply = () => {
+            textNode.textContent = quote.text;
+            textNode.classList.remove('is-swapping');
+            if (authorNode) authorNode.textContent = quote.author || 'Saved by you';
+            if (!reducedMotion) {
+                // Restart the entrance animation so every swap rises in cleanly.
+                textNode.style.animation = 'none';
+                void textNode.offsetWidth;
+                textNode.style.animation = '';
+            }
+        };
+        if (reducedMotion) { apply(); return; }
+        textNode.classList.add('is-swapping');
+        window.setTimeout(apply, 320);
+    };
+
+    const showAnother = () => {
+        if (!textNode) return Promise.resolve();
+        return loadQuotes().then((list) => {
+            if (!list.length) return;
+            const current = textNode.textContent.trim();
+            const pool = list.filter((item) => item.text.trim() !== current);
+            const candidates = pool.length ? pool : list;
+            const choice = candidates[Math.floor(Math.random() * candidates.length)];
+            paint(choice);
+        });
+    };
+
+    button.addEventListener('click', () => {
+        if (button.classList.contains('is-loading')) return;
+        button.classList.add('is-loading');
+        showAnother().finally(() => {
+            window.setTimeout(() => button.classList.remove('is-loading'), 520);
+        });
+    });
+
+    // Gentle auto-cycle: drifts to a new quote, but never fights the reader.
+    const interval = Number(panel?.dataset.quoteAutocycle || 0);
+    if (interval > 0 && !reducedMotion) {
+        let timer = null;
+        const start = () => {
+            stop();
+            timer = window.setInterval(() => {
+                if (document.hidden || button.classList.contains('is-loading')) return;
+                showAnother();
+            }, interval);
+        };
+        const stop = () => {
+            if (timer !== null) { window.clearInterval(timer); timer = null; }
+        };
+        // Pause while the reader is hovering, focused, or on another tab.
+        panel?.addEventListener('mouseenter', stop);
+        panel?.addEventListener('mouseleave', start);
+        panel?.addEventListener('focusin', stop);
+        panel?.addEventListener('focusout', start);
+        document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+        // Only animate once the panel is actually on screen.
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver((entries) => {
+                entries.forEach((entry) => (entry.isIntersecting ? start() : stop()));
+            }, { threshold: .35 }).observe(panel);
+        } else {
+            start();
+        }
+    }
+});

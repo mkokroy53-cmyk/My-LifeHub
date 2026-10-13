@@ -29,4 +29,5 @@ urlpatterns = [
     path('add/<str:kind>/', views.add_entry, name='add_entry'),
     path('schedule/add/<str:kind>/', views.add_schedule_item, name='add_schedule_item'),
     path('quotes/add/', views.add_quote, name='add_quote'),
+    path('quotes/random/', views.random_quote, name='random_quote'),
 ]
