@@ -14,6 +14,7 @@ urlpatterns = [
     path('export/', views.export, name='export'),
     path('files/', views.files, name='files'),
     path('files/<int:upload_id>/download/', views.download_file, name='download_file'),
+    path('files/<int:upload_id>/preview/', views.preview_file, name='preview_file'),
     path('files/<int:upload_id>/delete/', views.delete_file, name='delete_file'),
     path('learning/', views.learning_library, name='learning'),
     path('learning/add/', views.add_resource, name='add_resource'),

@@ -339,6 +339,21 @@ def download_file(request, upload_id):
 
 
 @login_required
+def preview_file(request, upload_id):
+    """Serve the PDF inline so it renders inside the Learning section."""
+    upload = get_object_or_404(PrivatePDFUpload, user=request.user, pk=upload_id)
+    if not upload.file or not upload.file.storage.exists(upload.file.name):
+        raise Http404
+    response = FileResponse(
+        upload.file.open('rb'),
+        content_type='application/pdf',
+    )
+    response['Content-Disposition'] = f'inline; filename="{upload.original_filename}"'
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@login_required
 @require_http_methods(['GET', 'POST'])
 def delete_file(request, upload_id):
     upload = get_object_or_404(PrivatePDFUpload, user=request.user, pk=upload_id)
