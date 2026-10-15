@@ -28,7 +28,8 @@ class AuthenticationFlowTests(TestCase):
 		self.assertEqual(response.status_code, 405)
 
 		response = self.client.post(reverse('accounts:logout'))
-		self.assertRedirects(response, reverse('accounts:login'))
+		# Signing out returns to the public portfolio landing page.
+		self.assertRedirects(response, reverse('dashboard:portfolio'))
 
 	def test_password_reset_sends_email(self):
 		response = self.client.post(

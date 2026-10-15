@@ -1,7 +1,0 @@
-System check identified no issues (0 silenced).
-
-STDERR:
-----------------------------------------------------------------------
-Ran 10 tests in 71.216s
-
-OK

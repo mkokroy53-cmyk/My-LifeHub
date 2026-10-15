@@ -45,6 +45,28 @@ def _pdf_archive_path(upload):
     return f'files/{upload.pk}-{filename}'
 
 
+def portfolio(request):
+    """Public landing page.
+
+    Anyone can read the developer portfolio. The sign-in form lives in a modal
+    that opens on demand, and every private destination stays behind
+    @login_required. If a visitor was bounced here from a private URL, the modal
+    opens automatically and the original destination is preserved in ?next=.
+    """
+    next_url = request.GET.get('next', '')
+    # Only ever forward same-site relative paths back into the form.
+    if not next_url.startswith('/') or next_url.startswith('//'):
+        next_url = ''
+    return render(
+        request,
+        'dashboard/portfolio.html',
+        {
+            'open_login': bool(next_url),
+            'next_url': next_url,
+        },
+    )
+
+
 @login_required
 def index(request):
     current_hour = timezone.localtime().hour

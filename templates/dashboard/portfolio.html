@@ -1,0 +1,556 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080b1b" />
+    <meta
+      name="description"
+      content="Roy Mkok — Computer Science student and full-stack developer building production Django platforms. Portfolio, skills, and featured work."
+    />
+    <title>Roy Mkok · Full-Stack Developer &amp; CS Student</title>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}" />
+    <link
+      rel="shortcut icon"
+      type="image/png"
+      href="{% static 'img/favicon.png' %}"
+    />
+    <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/app.css' %}" />
+    <script src="{% static 'js/app.js' %}" defer></script>
+  </head>
+  <body
+    class="app-page portfolio-page"
+    data-portfolio-login="{{ open_login|yesno:'1,0' }}"
+  >
+    <!-- ============ PUBLIC TOP BAR ============ -->
+    <header class="pf-topbar">
+      <a
+        class="pf-brand"
+        href="{% url 'dashboard:portfolio' %}"
+        aria-label="Roy Mkok — home"
+      >
+        <span class="brand-mark" aria-hidden="true"
+          ><i></i><i></i><i></i><i></i
+        ></span>
+        <span class="pf-brand-copy">
+          <strong>Roy Mkok</strong>
+          <small>Full-Stack Developer</small>
+        </span>
+      </a>
+
+      <nav class="pf-nav" aria-label="Portfolio sections">
+        <a href="#about">About</a>
+        <a href="#skills">Skills</a>
+        <a href="#work">Work</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="pf-topbar-actions">
+        <button
+          class="theme-toggle"
+          type="button"
+          data-theme-toggle
+          aria-label="Switch to light mode"
+          title="Switch to light mode"
+        >
+          <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
+            />
+          </svg>
+          <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"
+            />
+          </svg>
+        </button>
+
+        {% if user.is_authenticated %}
+        <a
+          class="pf-login-button pf-login-open"
+          href="{% url 'dashboard:index' %}"
+        >
+          <span>Go to dashboard</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+        {% else %}
+        <button
+          class="pf-login-button"
+          type="button"
+          data-login-open
+          aria-haspopup="dialog"
+          aria-controls="login-overlay"
+        >
+          <span>Sign in</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <path d="M10 17l5-5-5-5M15 12H3" />
+          </svg>
+        </button>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="pf-main">
+      <!-- ============ HERO ============ -->
+      <section class="pf-hero" aria-labelledby="hero-title">
+        <span class="pf-hero-orb pf-orb-a" aria-hidden="true"></span>
+        <span class="pf-hero-orb pf-orb-b" aria-hidden="true"></span>
+        <span class="pf-hero-grid" aria-hidden="true"></span>
+
+        <div class="pf-hero-copy">
+          <span class="pf-pill"
+            ><i aria-hidden="true"></i> Available for Tech Roles &amp;
+            Collaborations</span
+          >
+          <h1 id="hero-title">
+            Building high-impact<br />
+            <em>digital experiences.</em>
+          </h1>
+          <p class="pf-hero-lede">
+            I'm <strong>Roy Mkok</strong> — a Computer Science student and
+            full-stack developer crafting production-ready platforms with clean
+            architecture, robust data modelling, and interfaces that feel
+            effortless.
+          </p>
+
+          <div class="pf-hero-actions">
+            <a class="pf-btn pf-btn-primary" href="#work">
+              <span>View my work</span>
+              <span aria-hidden="true">→</span>
+            </a>
+            <a
+              class="pf-btn pf-btn-ghost"
+              href="https://github.com/mkokroy53-cmyk"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+                />
+              </svg>
+              <span>GitHub</span>
+            </a>
+          </div>
+
+          <dl class="pf-hero-stats">
+            <div>
+              <dt>Degree</dt>
+              <dd>B.Sc. Computer Science</dd>
+            </div>
+            <div>
+              <dt>Focus</dt>
+              <dd>Full-Stack Engineering</dd>
+            </div>
+            <div>
+              <dt>Stack</dt>
+              <dd>Django · Python · PostgreSQL</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="pf-hero-portrait">
+          <div class="pf-portrait-frame">
+            <img
+              src="{% static 'img/portfolio.jpeg' %}"
+              alt="Roy Mkok, full-stack developer and Computer Science student"
+              width="360"
+              height="480"
+              loading="eager"
+            />
+            <span class="pf-portrait-ring" aria-hidden="true"></span>
+            <span class="pf-portrait-badge pf-badge-top" aria-hidden="true"
+              >✦</span
+            >
+            <span class="pf-portrait-badge pf-badge-bottom" aria-hidden="true"
+              >◆</span
+            >
+          </div>
+          <div class="pf-portrait-tags">
+            <span>Python 3</span><span>Django 5</span><span>PostgreSQL</span
+            ><span>JavaScript</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ABOUT ============ -->
+      <section class="pf-section" id="about" aria-labelledby="about-title">
+        <div class="pf-section-head">
+          <span class="pf-kicker">01 — About me</span>
+          <h2 id="about-title">Engineering with intent.</h2>
+        </div>
+        <div class="pf-about-grid">
+          <p class="pf-about-lede">
+            A dedicated Computer Science student and full-stack developer with
+            hands-on expertise building production-ready web platforms from
+            conception to deployment.
+          </p>
+          <p class="pf-about-body">
+            I'm passionate about solving real-world challenges through
+            data-driven software, robust API design, and intuitive user
+            experiences. My work spans relational schema design, authentication
+            and access control, private file handling, and responsive interface
+            systems — always with an emphasis on security and clarity.
+          </p>
+        </div>
+        <div class="pf-focus-tags">
+          <span class="pf-focus-tag"
+            ><i aria-hidden="true">✦</i> Full-Stack Engineering</span
+          >
+          <span class="pf-focus-tag"
+            ><i aria-hidden="true">✦</i> Database Optimization</span
+          >
+          <span class="pf-focus-tag"
+            ><i aria-hidden="true">✦</i> Systems Architecture</span
+          >
+          <span class="pf-focus-tag"
+            ><i aria-hidden="true">✦</i> Clean UI/UX Design</span
+          >
+        </div>
+      </section>
+
+      <!-- ============ SKILLS ============ -->
+      <section class="pf-section" id="skills" aria-labelledby="skills-title">
+        <div class="pf-section-head">
+          <span class="pf-kicker">02 — Technical proficiencies</span>
+          <h2 id="skills-title">Core stack &amp; technologies.</h2>
+        </div>
+
+        <div class="pf-skills-grid">
+          <article class="pf-skill-card">
+            <div class="pf-skill-head">
+              <span class="pf-skill-icon icon-backend"
+                ><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <polyline points="16 18 22 12 16 6" />
+                  <polyline points="8 6 2 12 8 18" /></svg
+              ></span>
+              <h3>Backend &amp; Server</h3>
+            </div>
+            <ul class="pf-skill-tags">
+              <li>Python 3</li>
+              <li>Django 5</li>
+              <li>RESTful APIs</li>
+              <li>WSGI &amp; Gunicorn</li>
+              <li>Session &amp; CSRF Security</li>
+              <li>WhiteNoise</li>
+            </ul>
+          </article>
+
+          <article class="pf-skill-card">
+            <div class="pf-skill-head">
+              <span class="pf-skill-icon icon-frontend"
+                ><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" /></svg
+              ></span>
+              <h3>Frontend &amp; Interface</h3>
+            </div>
+            <ul class="pf-skill-tags">
+              <li>JavaScript (ES6+)</li>
+              <li>HTML5 Semantic Markup</li>
+              <li>Modern CSS3 &amp; Grid</li>
+              <li>Responsive UI Systems</li>
+              <li>Accessibility (WCAG)</li>
+              <li>Dynamic Dark/Light Themes</li>
+            </ul>
+          </article>
+
+          <article class="pf-skill-card">
+            <div class="pf-skill-head">
+              <span class="pf-skill-icon icon-database"
+                ><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <ellipse cx="12" cy="5" rx="9" ry="3" />
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg
+              ></span>
+              <h3>Databases &amp; Modeling</h3>
+            </div>
+            <ul class="pf-skill-tags">
+              <li>PostgreSQL</li>
+              <li>SQLite</li>
+              <li>Django ORM</li>
+              <li>Schema Normalization</li>
+              <li>Query Optimization</li>
+              <li>Automated Migrations</li>
+            </ul>
+          </article>
+
+          <article class="pf-skill-card">
+            <div class="pf-skill-head">
+              <span class="pf-skill-icon icon-tools"
+                ><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+                  /></svg
+              ></span>
+              <h3>DevOps &amp; Tools</h3>
+            </div>
+            <ul class="pf-skill-tags">
+              <li>Git &amp; GitHub Versioning</li>
+              <li>Linux &amp; Bash CLI</li>
+              <li>Render Cloud PaaS</li>
+              <li>CI/CD Deployment</li>
+              <li>Virtual Environments</li>
+              <li>Automated Unit Testing</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============ WORK ============ -->
+      <section class="pf-section" id="work" aria-labelledby="work-title">
+        <div class="pf-section-head pf-section-head-row">
+          <div>
+            <span class="pf-kicker">03 — Engineering highlights</span>
+            <h2 id="work-title">Featured full-stack work.</h2>
+          </div>
+          <a
+            class="pf-inline-link"
+            href="https://github.com/mkokroy53-cmyk"
+            target="_blank"
+            rel="noopener noreferrer"
+            >View more on GitHub <span aria-hidden="true">↗</span></a
+          >
+        </div>
+
+        <div class="pf-work-grid">
+          <article class="pf-work-card pf-work-featured">
+            <div class="pf-work-top">
+              <span class="pf-badge-live"
+                ><i aria-hidden="true"></i> Live Deployment</span
+              >
+              <span class="pf-work-year">2026</span>
+            </div>
+            <h3>My-LifeHub</h3>
+            <p>
+              A private life-management platform with session authentication,
+              dynamic light/dark theming, automated superuser provisioning, a
+              private PDF vault, cross-module search, a month calendar, a
+              multi-currency finance ledger, and full personal-data export — all
+              owner-scoped.
+            </p>
+            <ul class="pf-work-tech">
+              <li>Django</li>
+              <li>Python</li>
+              <li>PostgreSQL</li>
+              <li>JavaScript</li>
+              <li>WhiteNoise</li>
+            </ul>
+            <div class="pf-work-footer">
+              {% if user.is_authenticated %}
+              <a
+                class="pf-btn pf-btn-primary pf-btn-sm"
+                href="{% url 'dashboard:index' %}"
+                >Open dashboard <span aria-hidden="true">→</span></a
+              >
+              {% else %}
+              <button
+                class="pf-btn pf-btn-primary pf-btn-sm"
+                type="button"
+                data-login-open
+              >
+                Sign in to explore <span aria-hidden="true">→</span>
+              </button>
+              {% endif %}
+              <a
+                class="pf-icon-link"
+                href="https://github.com/mkokroy53-cmyk/My-LifeHub"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="My-LifeHub source on GitHub"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+                  />
+                </svg>
+                <span>Source</span>
+              </a>
+            </div>
+          </article>
+
+          <article class="pf-work-card">
+            <div class="pf-work-top">
+              <span class="pf-badge-prod">Production Feature</span>
+              <span class="pf-work-year">2026</span>
+            </div>
+            <h3>Financial Ledger &amp; Analytics</h3>
+            <p>
+              A real-time transaction engine tracking multi-currency income and
+              expenses, with monthly summaries grouped strictly by currency and
+              dynamic category rollups.
+            </p>
+            <ul class="pf-work-tech">
+              <li>Django ORM</li>
+              <li>PostgreSQL</li>
+              <li>Financial Logic</li>
+              <li>CSS Systems</li>
+            </ul>
+          </article>
+
+          <article class="pf-work-card">
+            <div class="pf-work-top">
+              <span class="pf-badge-prod">CS Application</span>
+              <span class="pf-work-year">2026</span>
+            </div>
+            <h3>Timetable &amp; Schedule Optimizer</h3>
+            <p>
+              A dynamic academic scheduler for university coursework and
+              personal commitments, with validated time ranges and conflict-free
+              day views.
+            </p>
+            <ul class="pf-work-tech">
+              <li>Algorithms</li>
+              <li>Django Views</li>
+              <li>Time Scheduling</li>
+              <li>Vanilla JS</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============ ACADEMIC + CONTACT ============ -->
+      <section
+        class="pf-section pf-contact-section"
+        id="contact"
+        aria-labelledby="contact-title"
+      >
+        <div class="pf-contact-card">
+          <div class="pf-academic">
+            <span class="pf-kicker">04 — Academic foundation</span>
+            <h2 id="contact-title">Computer Science degree coursework.</h2>
+            <div class="pf-coursework">
+              <span>Data Structures &amp; Algorithms</span>
+              <span>Object-Oriented Design</span>
+              <span>Database Management Systems</span>
+              <span>Software Engineering Methodologies</span>
+              <span>Computer Networks &amp; Security</span>
+            </div>
+          </div>
+          <div class="pf-cta">
+            <span class="pf-cta-label">Ready to collaborate?</span>
+            <div class="pf-cta-buttons">
+              <a
+                class="pf-btn pf-btn-primary"
+                href="mailto:mkokroy53@gmail.com"
+              >
+                <span>Contact me</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                  />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </a>
+              <a
+                class="pf-btn pf-btn-ghost"
+                href="https://github.com/mkokroy53-cmyk"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>Explore GitHub</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pf-footer">
+      <span>© {% now "Y" %} ROY MKOK</span>
+      <span>BUILT WITH DJANGO · DEPLOYED ON RENDER</span>
+      {% if not user.is_authenticated %}<button
+        class="pf-footer-signin"
+        type="button"
+        data-login-open
+      >
+        Sign in</button
+      >{% endif %}
+    </footer>
+
+    {% if not user.is_authenticated %}
+    <!-- ============ SIGN-IN OVERLAY ============ -->
+    <div class="login-overlay" id="login-overlay" data-login-overlay hidden>
+      <div class="login-backdrop" data-login-backdrop></div>
+      <div
+        class="login-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-title"
+        aria-describedby="login-desc"
+      >
+        <button
+          class="login-dialog-close"
+          type="button"
+          data-login-close
+          aria-label="Close sign-in dialog"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+
+        <span class="pf-kicker">Welcome home</span>
+        <h2 id="login-title">Sign in to <em>your space.</em></h2>
+        <p id="login-desc" class="login-dialog-desc">
+          Your personal archive is private and just for you.
+        </p>
+
+        {% if form.errors %}
+        <div class="form-alert" role="alert">
+          That username and password combination didn't match. Please try again.
+        </div>
+        {% endif %}
+
+        <form
+          method="post"
+          action="{% url 'accounts:login' %}"
+          class="login-form"
+          novalidate
+        >
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next_url|default:'' }}" />
+          <label for="id_login_username">Username</label>
+          <input
+            id="id_login_username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            required
+          />
+          <div class="label-row">
+            <label for="id_login_password">Password</label>
+            <a href="{% url 'accounts:password_reset' %}">Forgot password?</a>
+          </div>
+          <input
+            id="id_login_password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+          <button class="pf-btn pf-btn-primary login-submit" type="submit">
+            Enter your space <span aria-hidden="true">↗</span>
+          </button>
+        </form>
+
+        <p class="login-dialog-note">
+          Private by design — no one else can see your archive.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </body>
+</html>

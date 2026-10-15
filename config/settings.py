@@ -190,7 +190,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024
 
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'dashboard:index'
-LOGOUT_REDIRECT_URL = 'accounts:login'
+LOGOUT_REDIRECT_URL = 'dashboard:portfolio'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 SESSION_COOKIE_HTTPONLY = True

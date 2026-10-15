@@ -5,7 +5,9 @@ from . import views
 app_name = 'dashboard'
 
 urlpatterns = [
-    path('', views.index, name='index'),
+    # Public landing page — the developer portfolio, readable without signing in.
+    path('', views.portfolio, name='portfolio'),
+    path('dashboard/', views.index, name='index'),
     path('settings/', views.settings_view, name='settings'),
     path('search/', views.search, name='search'),
     path('calendar/', views.calendar_view, name='calendar'),

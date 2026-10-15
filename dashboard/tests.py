@@ -15,10 +15,42 @@ from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem, Priva
 
 
 class DashboardAccessTests(TestCase):
+    def test_portfolio_landing_page_is_public(self):
+        response = self.client.get(reverse('dashboard:portfolio'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dashboard/portfolio.html')
+        self.assertContains(response, 'data-login-overlay')
+
+    def test_private_pages_bounce_anonymous_users_back_to_portfolio_login(self):
+        """A signed-out visitor lands on the portfolio with the login modal primed."""
+        response = self.client.get(reverse('dashboard:index'))
+
+        # First hop: Django's login_required sends us to the login URL.
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('dashboard:index')}",
+            fetch_redirect_response=False,
+        )
+        # Second hop: the login URL forwards to the portfolio carrying ?next=,
+        # so the credential modal opens and the destination is remembered.
+        follow = self.client.get(response['Location'])
+        self.assertRedirects(
+            follow,
+            f"{reverse('dashboard:portfolio')}?next={reverse('dashboard:index')}",
+        )
+        landing = self.client.get(f"{reverse('dashboard:portfolio')}?next={reverse('dashboard:index')}")
+        self.assertEqual(landing.status_code, 200)
+        self.assertTrue(landing.context['open_login'])
+
     def test_anonymous_user_is_redirected_to_login(self):
         response = self.client.get(reverse('dashboard:index'))
 
-        self.assertRedirects(response, f"{reverse('accounts:login')}?next={reverse('dashboard:index')}")
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('dashboard:index')}",
+            fetch_redirect_response=False,
+        )
 
     def test_authenticated_user_can_open_dashboard(self):
         user = get_user_model().objects.create_user(username='reader', password='a-strong-test-password')
@@ -51,7 +83,11 @@ class DashboardAccessTests(TestCase):
     def test_anonymous_user_cannot_export_personal_data(self):
         response = self.client.get(reverse('dashboard:export'))
 
-        self.assertRedirects(response, f"{reverse('accounts:login')}?next={reverse('dashboard:export')}")
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('dashboard:export')}",
+            fetch_redirect_response=False,
+        )
 
 
 class DashboardDataTests(TestCase):

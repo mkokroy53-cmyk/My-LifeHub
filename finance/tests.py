@@ -12,7 +12,11 @@ class FinanceAccessTests(TestCase):
     def test_anonymous_user_is_redirected_to_login(self):
         response = self.client.get(reverse('finance:index'))
 
-        self.assertRedirects(response, f"{reverse('accounts:login')}?next={reverse('finance:index')}")
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('finance:index')}",
+            fetch_redirect_response=False,
+        )
 
 
 class FinanceTransactionTests(TestCase):

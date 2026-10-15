@@ -380,3 +380,109 @@ document.querySelectorAll('[data-quote-shuffle]').forEach((button) => {
         }
     }
 });
+
+/* =====================================================================
+   Public portfolio — sign-in overlay
+   The portfolio is readable without an account; the credential form opens
+   on demand. If a visitor was bounced here from a private URL, the modal
+   opens automatically and ?next= returns them to where they were headed.
+   ===================================================================== */
+(() => {
+    const overlay = document.querySelector('[data-login-overlay]');
+    if (!overlay) return;
+
+    const dialog = overlay.querySelector('.login-dialog');
+    const openers = document.querySelectorAll('[data-login-open]');
+    const closers = document.querySelectorAll('[data-login-close]');
+    const backdrop = overlay.querySelector('[data-login-backdrop]');
+    const usernameField = overlay.querySelector('input[name="username"]');
+    let lastFocused = null;
+
+    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    const isOpen = () => !overlay.hasAttribute('hidden');
+
+    function openLogin() {
+        if (isOpen()) return;
+        lastFocused = document.activeElement;
+        overlay.removeAttribute('hidden');
+        document.body.classList.add('login-open');
+        // Focus the first empty field so the visitor can start typing at once.
+        window.requestAnimationFrame(() => {
+            const target = usernameField && !usernameField.value
+                ? usernameField
+                : overlay.querySelector(FOCUSABLE);
+            target?.focus();
+        });
+    }
+
+    function closeLogin() {
+        if (!isOpen()) return;
+        overlay.setAttribute('hidden', '');
+        document.body.classList.remove('login-open');
+        if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    }
+
+    openers.forEach((button) => button.addEventListener('click', openLogin));
+    closers.forEach((button) => button.addEventListener('click', closeLogin));
+    backdrop?.addEventListener('click', closeLogin);
+
+    // Escape closes; Tab is trapped inside the dialog while it is open.
+    overlay.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { event.preventDefault(); closeLogin(); return; }
+        if (event.key !== 'Tab' || !dialog) return;
+        const items = Array.from(dialog.querySelectorAll(FOCUSABLE)).filter((el) => el.offsetParent !== null);
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+
+    // Arrived from a private page while signed out — ask for credentials immediately.
+    const bounced = document.body.dataset.portfolioLogin === '1';
+    const hasError = document.querySelector('.login-dialog .form-alert');
+    if (bounced || hasError) openLogin();
+})();
+
+/* =====================================================================
+   Public portfolio — reveal sections as they scroll into view
+
+   Content is visible by default; the fade-in is pure enhancement. If the
+   observer never runs, or the browser lacks support, everything simply
+   shows at once. Nothing is ever left hidden.
+   ===================================================================== */
+(() => {
+    const sections = document.querySelectorAll('.portfolio-page .pf-section');
+    if (!sections.length) return;
+
+    const reveal = (section) => section.classList.add('is-visible');
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || !('IntersectionObserver' in window)) {
+        sections.forEach(reveal);
+        return;
+    }
+
+    // Only arm the hidden initial state once we know we can un-hide it.
+    document.body.classList.add('pf-reveal-ready');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                reveal(entry.target);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.05, rootMargin: '0px 0px -10% 0px' });
+
+    sections.forEach((section) => {
+        // Anything already within (or above) the viewport reveals immediately.
+        const rect = section.getBoundingClientRect();
+        if (rect.top < window.innerHeight) reveal(section);
+        observer.observe(section);
+    });
+
+    // Safety net: if anything is still hidden shortly after load, show it.
+    window.setTimeout(() => sections.forEach(reveal), 1200);
+})();
