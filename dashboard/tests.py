@@ -114,6 +114,7 @@ class DashboardDataTests(TestCase):
             {'title': 'A thought', 'description': 'Keep this for later.'},
         )
 
+        # Notes land back on the dashboard, and never on the form just submitted.
         self.assertRedirects(response, reverse('dashboard:index'))
         entry = DashboardEntry.objects.get(title='A thought')
         self.assertEqual(entry.user, self.user)
@@ -460,7 +461,8 @@ class DiaryWorkspaceTests(TestCase):
             reverse('dashboard:add_entry', kwargs={'kind': DashboardEntry.Kind.DIARY}),
             {'title': 'Moody day', 'description': 'Felt calm.', 'mood': 'good'},
         )
-        self.assertRedirects(response, reverse('dashboard:index'))
+        # A saved diary entry returns to the diary, not the writing form.
+        self.assertRedirects(response, reverse('dashboard:diary'))
         entry = DashboardEntry.objects.get(title='Moody day')
         self.assertEqual(entry.mood, 'good')
         self.assertEqual(entry.kind, DashboardEntry.Kind.DIARY)
@@ -643,7 +645,8 @@ class ProjectsWorkspaceTests(TestCase):
                 'repo_url': 'https://github.com/example/site',
             },
         )
-        self.assertRedirects(response, reverse('dashboard:index'))
+        # A saved project returns to the project board, not the creation form.
+        self.assertRedirects(response, reverse('dashboard:projects'))
         project = DashboardEntry.objects.get(title='Portfolio Rewrite')
         self.assertEqual(project.role, 'Solo Developer')
         self.assertEqual(project.client, 'Personal')

@@ -138,7 +138,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# The user lives in South Africa (SAST, UTC+2). With USE_TZ the database keeps
+# everything in UTC, but Django renders and compares dates in this zone, so
+# "today" rolls over at local midnight instead of 02:00 the next morning.
+# Override with TIME_ZONE=Area/City in the environment if that ever changes.
+TIME_ZONE = os.getenv('TIME_ZONE', 'Africa/Johannesburg')
 
 USE_I18N = True
 

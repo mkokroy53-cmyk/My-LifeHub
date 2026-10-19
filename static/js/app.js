@@ -219,6 +219,9 @@ document.querySelectorAll('.toast').forEach((toast) => {
 });
 
 document.querySelectorAll('form[method="post"] button[type="submit"]').forEach((button) => {
+    // Workspace forms manage their own submit state (and fall back to a native
+    // POST), so disabling the button here would break that fallback.
+    if (button.form?.classList.contains('workspace-form')) return;
     button.form?.addEventListener('submit', () => {
         button.classList.add('is-loading');
         button.setAttribute('aria-busy', 'true');
@@ -261,6 +264,91 @@ document.addEventListener('keydown', (event) => {
         window.history.forward();
     }
 });
+
+/* ==========================================================================
+   POST/SAVE NAVIGATION
+   A normal form POST follows the server's redirect with a *push*, so the
+   just-submitted form stays in history and Back returns to the blank form.
+   Instead we post with fetch, read the destination the server chose, and
+   navigate with replace() — the form entry is overwritten, so Back goes to
+   the page the writer came from rather than the form they already used.
+   ========================================================================== */
+document.querySelectorAll('form.workspace-form').forEach((form) => {
+    if ((form.method || '').toLowerCase() !== 'post') return;
+
+    form.addEventListener('submit', async (event) => {
+        // Let the browser handle it if anything about fetch is unavailable.
+        if (!window.fetch || !window.FormData) return;
+        event.preventDefault();
+
+        const submitter = form.querySelector('button[type="submit"], input[type="submit"]');
+        submitter?.classList.add('is-loading');
+        submitter?.setAttribute('aria-busy', 'true');
+
+        try {
+            const response = await fetch(form.action || window.location.href, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                redirect: 'follow',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+
+            if (response.redirected && response.url) {
+                // Saved successfully: replace the form's history entry.
+                window.location.replace(response.url);
+                return;
+            }
+
+            // Re-render errors in place (invalid form, 422/200 with errors).
+            const html = await response.text();
+            const parsed = new DOMParser().parseFromString(html, 'text/html');
+            const replacement = parsed.querySelector('form.workspace-form');
+            if (replacement) {
+                form.replaceWith(document.adoptNode(replacement));
+                window.scrollTo({ top: 0, behavior: 'auto' });
+                return;
+            }
+            window.location.reload();
+        } catch {
+            submitter?.classList.remove('is-loading');
+            submitter?.removeAttribute('aria-busy');
+            form.submit(); // fall back to a normal POST
+        }
+    });
+});
+
+/* When a page is restored from the browser's back/forward cache, refresh it so
+   a stale, already-submitted form is never shown again. */
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) window.location.reload();
+});
+
+/* ==========================================================================
+   MIDNIGHT ROLLOVER
+   Dates are rendered server-side in the visitor's timezone, so a page opened
+   just before midnight would still show yesterday until reloaded. This watches
+   for the local calendar day to change and reloads once, so "today", streaks
+   and the calendar always agree with the real date the moment it ticks over.
+   ========================================================================== */
+(() => {
+    const dateStamp = document.querySelector('[data-current-date]');
+    if (!dateStamp) return;
+
+    const todayKey = () => {
+        const now = new Date();
+        return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    };
+
+    let currentDay = todayKey();
+    // Check every 20s: cheap, and catches the rollover within seconds.
+    window.setInterval(() => {
+        const nextDay = todayKey();
+        if (nextDay === currentDay) return;
+        currentDay = nextDay;
+        window.location.reload();
+    }, 20000);
+})();
 
 /* Reflect a subtle loading state while navigating between pages */
 window.addEventListener('pageshow', () => document.body.classList.remove('history-leaving'));

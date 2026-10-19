@@ -115,16 +115,27 @@
         </section>
 
         {% if mood_counts %}
-        <section class="diary-panel">
-            <div class="section-heading"><div><span class="section-kicker">HOW YOU HAVE FELT</span><h2>Mood mix</h2></div></div>
+        <section class="diary-panel mood-panel">
+            <div class="section-heading"><div><span class="section-kicker">HOW YOU HAVE FELT</span><h2>Mood mix</h2></div><span class="mood-total">{{ mood_total }} logged</span></div>
             <div class="mood-breakdown">
                 {% for value, data in mood_counts.items %}
-                <div class="mood-bar-row">
-                    <span class="mood-pill mood-{{ value }}">{{ data.label }}</span>
-                    <span class="mood-bar-count">{{ data.count }}</span>
+                <div class="mood-row mood-row-{{ value }}{% if forloop.first %} is-top{% endif %}">
+                    <span class="mood-emoji" aria-hidden="true">{% if value == 'great' %}🌟{% elif value == 'good' %}🌸{% elif value == 'neutral' %}☁️{% elif value == 'low' %}🌙{% else %}🌧️{% endif %}</span>
+                    <div class="mood-row-main">
+                        <div class="mood-row-head">
+                            <span class="mood-name">{{ data.label }}</span>
+                            <span class="mood-row-figure"><strong>{{ data.count }}</strong><small>{{ data.percent }}%</small></span>
+                        </div>
+                        <div class="mood-track" role="img" aria-label="{{ data.label }}: {{ data.count }} of {{ mood_total }} entries">
+                            <span class="mood-fill" style="--mood-width: {{ data.percent }}%"></span>
+                        </div>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
+            {% if top_mood %}
+            <p class="mood-summary">Most often <strong>{{ top_mood.label|lower }}</strong> — {{ top_mood.percent }}% of your entries.</p>
+            {% endif %}
         </section>
         {% endif %}
 

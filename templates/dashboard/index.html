@@ -8,7 +8,7 @@
         <h1>{{ greeting }},<br><em>{{ user.first_name|default:user.username }}.</em></h1>
         <p>A little room to gather the things that matter.</p>
     </div>
-    <div class="welcome-date"><span class="date-kicker">TODAY IS</span><strong>{{ today|date:"j" }}</strong><span>{{ today|date:"F Y" }}</span><i class="date-rule"></i><small>{{ today|date:"l" }}</small></div>
+    <div class="welcome-date" data-current-date><span class="date-kicker">TODAY IS</span><strong>{{ today|date:"j" }}</strong><span>{{ today|date:"F Y" }}</span><i class="date-rule"></i><small>{{ today|date:"l" }}</small></div>
     <span class="welcome-shape shape-ring" aria-hidden="true"></span><span class="welcome-shape shape-sun" aria-hidden="true"></span>
 </section>
 

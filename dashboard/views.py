@@ -45,6 +45,19 @@ def _pdf_archive_path(upload):
     return f'files/{upload.pk}-{filename}'
 
 
+def _entry_landing(kind):
+    """Where to send the writer once an entry is saved.
+
+    Each module has its own home, so the page they land on is a fresh list —
+    never the form they just submitted.
+    """
+    return {
+        DashboardEntry.Kind.DIARY: 'dashboard:diary',
+        DashboardEntry.Kind.PROJECT: 'dashboard:projects',
+        DashboardEntry.Kind.RESOURCE: 'dashboard:learning',
+    }.get(kind, 'dashboard:index')
+
+
 def portfolio(request):
     """Public landing page.
 
@@ -458,7 +471,9 @@ def add_entry(request, kind):
                 entry.progress = 100
             entry.save()
             messages.success(request, f'{entry.get_kind_display()} saved.')
-            return redirect('dashboard:index')
+            # Redirect to the module the item belongs to, so Back returns to a
+            # fresh list view rather than the form that was just submitted.
+            return redirect(_entry_landing(kind))
     else:
         form = DashboardEntryForm(kind=kind)
 
@@ -480,7 +495,7 @@ def add_schedule_item(request, kind):
             item.kind = kind
             item.save()
             messages.success(request, f'{item.get_kind_display()} added to your schedule.')
-            return redirect('dashboard:index')
+            return redirect('dashboard:calendar')
     else:
         form = DashboardScheduleForm(kind=kind)
 
@@ -596,8 +611,13 @@ def diary_workspace(request):
 
     total_entries = entries.count()
 
-    # Streak calculation (consecutive days with an entry, ending today or yesterday)
-    entry_dates = set(entries.values_list('created_at__date', flat=True))
+    # Streak calculation (consecutive days with an entry, ending today or yesterday).
+    # Compare in the local timezone so a late-night entry counts for the day the
+    # writer actually wrote it, not the UTC day it happened to land in.
+    entry_dates = {
+        timezone.localtime(created).date()
+        for created in entries.values_list('created_at', flat=True)
+    }
     streak = 0
     cursor = today
     if cursor not in entry_dates:
@@ -606,18 +626,29 @@ def diary_workspace(request):
         streak += 1
         cursor -= timezone.timedelta(days=1)
 
-    # This month count
-    month_entries = entries.filter(
-        created_at__year=today.year,
-        created_at__month=today.month,
-    ).count()
+    # This month count, measured in local time.
+    month_entries = sum(
+        1
+        for created in entries.values_list('created_at', flat=True)
+        if timezone.localtime(created).year == today.year
+        and timezone.localtime(created).month == today.month
+    )
 
-    # Mood breakdown
+    # Mood breakdown, with percentages so the panel can render real bar lengths.
     mood_counts = {}
+    mood_total = 0
     for value, label in DashboardEntry.Mood.choices:
         count = entries.filter(mood=value).count()
         if count:
             mood_counts[value] = {'label': label, 'count': count}
+            mood_total += count
+    for value, data in mood_counts.items():
+        data['percent'] = round(data['count'] * 100 / mood_total) if mood_total else 0
+    # Most-frequent mood first so the panel reads at a glance.
+    mood_counts = dict(
+        sorted(mood_counts.items(), key=lambda item: (-item[1]['count'], item[0]))
+    )
+    top_mood = next(iter(mood_counts.values()), None)
 
     # Calendar heatmap for current month
     weeks = month_calendar.Calendar(firstweekday=0).monthdatescalendar(today.year, today.month)
@@ -636,10 +667,14 @@ def diary_workspace(request):
 
     pinned = entries.filter(is_pinned=True).order_by('-updated_at')[:5]
     recent = entries.order_by('-created_at')[:12]
-    on_this_day = entries.filter(
-        created_at__month=today.month,
-        created_at__day=today.day,
-    ).exclude(created_at__date=today).order_by('-created_at')[:3]
+    # "On this day" in previous years, compared on the local calendar.
+    on_this_day = [
+        entry
+        for entry in entries.order_by('-created_at')
+        if timezone.localtime(entry.created_at).month == today.month
+        and timezone.localtime(entry.created_at).day == today.day
+        and timezone.localtime(entry.created_at).date() != today
+    ][:3]
 
     return render(
         request,
@@ -650,6 +685,8 @@ def diary_workspace(request):
             'streak': streak,
             'month_entries': month_entries,
             'mood_counts': mood_counts,
+            'mood_total': mood_total,
+            'top_mood': top_mood,
             'heatmap': heatmap,
             'weekday_names': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             'month_label': month_calendar.month_name[today.month],
