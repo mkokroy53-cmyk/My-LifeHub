@@ -1347,12 +1347,108 @@ body.theme-dark .quote-rotation-note { color: #64748b; }
 .app-page:not(.theme-dark) .activity-status { color: #43567d; }
 .app-page:not(.theme-dark) .page-footer { color: #c2d4ec; }
 
-.app-page:not(.theme-dark) .text-link { color: #2563eb; }
-.app-page:not(.theme-dark) .text-link:hover { color: #1d4ed8; }
-.app-page:not(.theme-dark) .back-link { color: #1d4ed8; }
-.app-page:not(.theme-dark) .library-link { color: #2563eb; }
-.app-page:not(.theme-dark) .goal-percent { color: #1d4ed8; }
-.app-page:not(.theme-dark) .library-count { color: #2563eb; }
+/* Text that sits directly on the navy page background (not inside a white
+   card), so it must be light. Headings, empty states, page intros. */
+.app-page:not(.theme-dark) .foundation-intro h2,
+.app-page:not(.theme-dark) .section-heading h2 { color: #ffffff; }
+.app-page:not(.theme-dark) .foundation-intro p { color: #d6e4f7; }
+.app-page:not(.theme-dark) .coming-note { color: #c9dbef; }
+.app-page:not(.theme-dark) .quiet-empty strong { color: #ffffff; }
+.app-page:not(.theme-dark) .quiet-empty p { color: #d2e0f4; }
+.app-page:not(.theme-dark) .foundation-point strong { color: #eef6ff; }
+.app-page:not(.theme-dark) .foundation-point small { color: #cbdcef; }
+.app-page:not(.theme-dark) .chapter-copy strong,
+.app-page:not(.theme-dark) .activity-copy strong,
+.app-page:not(.theme-dark) .goal-title strong,
+.app-page:not(.theme-dark) .schedule-copy strong,
+.app-page:not(.theme-dark) .upcoming-copy strong,
+.app-page:not(.theme-dark) .mini-list strong { color: #ffffff; }
+.app-page:not(.theme-dark) .chapter-number,
+.app-page:not(.theme-dark) .quote-credit,
+.app-page:not(.theme-dark) .quote-panel blockquote,
+.app-page:not(.theme-dark) .quote-empty { color: #d2e0f4; }
+.app-page:not(.theme-dark) .chapter-row:hover,
+.app-page:not(.theme-dark) .quick-action:hover { background: rgb(255 255 255 / .07); }
+.app-page:not(.theme-dark) .chapter-list .chapter-row,
+.app-page:not(.theme-dark) .goal-list,
+.app-page:not(.theme-dark) .quick-actions { border-color: rgb(255 255 255 / .16); }
+.app-page:not(.theme-dark) .text-link,
+.app-page:not(.theme-dark) .back-link,
+.app-page:not(.theme-dark) .library-link,
+.app-page:not(.theme-dark) .goal-percent,
+.app-page:not(.theme-dark) .library-count { color: #7fe3ff; }
+.app-page:not(.theme-dark) .text-link:hover,
+.app-page:not(.theme-dark) .back-link:hover { color: #b6f2ff; }
+.app-page:not(.theme-dark) .section-kicker { color: #7fe3ff; }
+.app-page:not(.theme-dark) .icon-link { color: #7fe3ff; border-color: rgb(127 227 255 / .4); }
+.app-page:not(.theme-dark) .calendar-heading h1,
+.app-page:not(.theme-dark) .form-page-heading h1,
+.app-page:not(.theme-dark) .finance-heading h1 { color: #ffffff; }
+.app-page:not(.theme-dark) .calendar-heading p,
+.app-page:not(.theme-dark) .form-page-heading p,
+.app-page:not(.theme-dark) .finance-heading p { color: #d6e4f7; }
+/* Bright teal is only for text on the navy background. Inside white cards it
+   must be a deep teal so it stays legible. */
+.app-page:not(.theme-dark) .library-card .section-kicker,
+.app-page:not(.theme-dark) .diary-panel .section-kicker,
+.app-page:not(.theme-dark) .calendar-panel .section-kicker,
+.app-page:not(.theme-dark) .settings-panel .section-kicker,
+.app-page:not(.theme-dark) .workspace-tile .section-kicker,
+.app-page:not(.theme-dark) .module-entry-card .section-kicker,
+.app-page:not(.theme-dark) .diary-stat-card .section-kicker,
+.app-page:not(.theme-dark) .learning-stat-card .section-kicker { color: #0f766e; }
+.app-page:not(.theme-dark) .library-card h2,
+.app-page:not(.theme-dark) .diary-panel h2,
+.app-page:not(.theme-dark) .calendar-panel h2,
+.app-page:not(.theme-dark) .settings-panel h2 { color: #0f2142; }
+.app-page:not(.theme-dark) .library-card .library-count,
+.app-page:not(.theme-dark) .library-card .library-link,
+.app-page:not(.theme-dark) .diary-panel .text-link,
+.app-page:not(.theme-dark) .calendar-panel .text-link,
+.app-page:not(.theme-dark) .calendar-panel .icon-link,
+.app-page:not(.theme-dark) .settings-panel .text-link,
+.app-page:not(.theme-dark) .workspace-tile .workspace-arrow { color: #047857; }
+.app-page:not(.theme-dark) .stat-card .stat-arrow { color: #047857; }
+.app-page:not(.theme-dark) .stat-arrow,
+.app-page:not(.theme-dark) .workspace-arrow { color: #0f9d76; }
+.app-page:not(.theme-dark) .empty-mark { background: rgb(255 255 255 / .12); color: #9bf5df; border-color: rgb(94 234 212 / .35); }
+
+.app-page:not(.theme-dark) .calendar-day.is-today .calendar-day-number { background: #1d4ed8; color: #ffffff; }
+
+.app-page:not(.theme-dark) .money-total-row,
+.app-page:not(.theme-dark) .ledger-count { color: #c9dbef; }
+.app-page:not(.theme-dark) .finance-monthbar h2,
+.app-page:not(.theme-dark) .calendar-toolbar h2 { color: #ffffff; }
+.app-page:not(.theme-dark) .calendar-panel .calendar-toolbar h2 { color: #0f2142; }
+.app-page:not(.theme-dark) .calendar-panel .calendar-toolbar span { color: #43567d; }
+.app-page:not(.theme-dark) .calendar-toolbar span,
+.app-page:not(.theme-dark) .finance-monthbar span { color: #c9dbef; }
+.app-page:not(.theme-dark) .search-summary { color: #d2e0f4; }
+
+.app-page:not(.theme-dark) .calendar-day-number { color: #1f3355; }
+.app-page:not(.theme-dark) .calendar-day.is-outside .calendar-day-number { color: #6b7f9e; }
+.app-page:not(.theme-dark) .diary-calendar-head span { color: #3d5178; }
+.app-page:not(.theme-dark) .diary-calendar-day { color: #1f3355; }
+.app-page:not(.theme-dark) .diary-calendar-day.is-outside { color: #6b7f9e; }
+.app-page:not(.theme-dark) .diary-legend { color: #3d5178; }
+.app-page:not(.theme-dark) .category-chip b { color: #3d5178; }
+.app-page:not(.theme-dark) .learning-card-body p.muted { color: #4a5d80; }
+.app-page:not(.theme-dark) .learning-card-meta { color: #43567d; }
+.app-page:not(.theme-dark) .diary-row-meta,
+.app-page:not(.theme-dark) .diary-row-copy small { color: #43567d; }
+.app-page:not(.theme-dark) .quote-rotation-note { color: #43567d; }
+.app-page:not(.theme-dark) .tech-chip b { color: #4a5d80; }
+.app-page:not(.theme-dark) .project-facts dt { color: #43567d; }
+.app-page:not(.theme-dark) .projects-stat-card span { color: #43567d; }
+.app-page:not(.theme-dark) .project-period { color: #43567d; }
+.app-page:not(.theme-dark) .projects-filter-form input::placeholder { color: #5a6d8c; opacity: 1; }
+
+.app-page:not(.theme-dark) .text-link { color: #7fe3ff; }
+.app-page:not(.theme-dark) .text-link:hover { color: #b6f2ff; }
+.app-page:not(.theme-dark) .back-link { color: #7fe3ff; }
+.app-page:not(.theme-dark) .library-link { color: #7fe3ff; }
+.app-page:not(.theme-dark) .goal-percent { color: #7fe3ff; }
+.app-page:not(.theme-dark) .library-count { color: #7fe3ff; }
 .app-page:not(.theme-dark) .form-field label,
 .app-page:not(.theme-dark) .form-field input,
 .app-page:not(.theme-dark) .form-field select,
@@ -1830,7 +1926,7 @@ body.theme-dark .pf-badge-top { color: #06101f; }
   transition: transform .2s ease, border-color .2s ease;
 }
 .pf-focus-tag:hover { transform: translateY(-2px); border-color: var(--pf-accent); }
-.pf-focus-tag i { color: var(--pf-accent); font-style: normal; }
+.pf-focus-tag i { color: #7fe3ff; font-style: normal; }
 
 /* ---------- skills ---------- */
 .pf-skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
@@ -1909,7 +2005,8 @@ body.theme-dark .pf-badge-top { color: #06101f; }
   border-top: 1px solid var(--pf-border);
   color: var(--pf-muted); font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
 }
-.pf-footer-signin { padding: 0; border: 0; background: none; color: var(--pf-accent); font: inherit; font-size: 10px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; cursor: pointer; }
+.pf-footer-signin { padding: 0; border: 0; background: none; color: #7fe3ff; font: inherit; font-size: 10px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; cursor: pointer; }
+body.theme-dark .pf-footer-signin { color: var(--pf-accent); }
 .pf-footer-signin:hover { text-decoration: underline; }
 
 /* ---------- animations ---------- */
@@ -1982,6 +2079,8 @@ body.theme-dark .login-dialog h2 { color: var(--pf-heading); }
 body.theme-dark .login-dialog h2 em { color: var(--pf-accent-2); }
 body.theme-dark .login-dialog-desc { color: var(--pf-body); }
 .login-dialog-note { margin: 20px 0 0; color: var(--pf-muted); font-size: 11px; text-align: center; }
+
+.login-dialog .pf-kicker { color: #0f766e; }
 
 .login-form { display: grid; gap: 10px; }
 .login-form label { margin-top: 4px; color: #0f2142; font-size: 11px; font-weight: 700; }
