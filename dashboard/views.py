@@ -943,39 +943,24 @@ def _owned_study_note(request, notebook, note_id):
 
 @login_required
 def notebook_list(request):
+    notebooks = DashboardNotebook.objects.filter(user=request.user).order_by('-is_pinned', '-updated_at')
+    notebook = notebooks.first()
+    if notebook is None:
+        notebook = DashboardNotebook.objects.create(user=request.user, title='Class Notebook')
+
     query = request.GET.get('q', '').strip()
-    notebooks = DashboardNotebook.objects.filter(user=request.user)
+    notes = StudyNote.objects.filter(notebook__user=request.user).select_related('notebook')
     if query:
-        notebooks = notebooks.filter(
-            Q(title__icontains=query)
-            | Q(subject__icontains=query)
-            | Q(course_code__icontains=query)
-            | Q(lecturer__icontains=query)
-            | Q(notes__title__icontains=query)
-            | Q(notes__body__icontains=query)
-        ).distinct()
-
-    books = []
-    for notebook in notebooks:
-        note_count = notebook.notes.count()
-        books.append({
-            'notebook': notebook,
-            'note_count': note_count,
-            'recent': notebook.notes.all()[:3],
-            'pinned_count': notebook.notes.filter(is_pinned=True).count(),
-        })
-
-    recent_notes = StudyNote.objects.filter(notebook__user=request.user).select_related('notebook')[:6]
+        notes = notes.filter(Q(title__icontains=query) | Q(body__icontains=query))
+    note_total = StudyNote.objects.filter(notebook__user=request.user).count()
     return render(
         request,
         'dashboard/notebooks.html',
         {
-            'books': books,
+            'notebook': notebook,
+            'notes': notes,
             'query': query,
-            'recent_notes': recent_notes,
-            'notebook_total': notebooks.count(),
-            'note_total': StudyNote.objects.filter(notebook__user=request.user).count(),
-            'page_title': 'Study notebook',
+            'note_total': note_total,
         },
     )
 

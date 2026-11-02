@@ -20,12 +20,12 @@
     <article class="learning-hub-card hub-notebooks">
         <div class="learning-hub-icon" aria-hidden="true">▤</div>
         <span class="section-kicker">WRITE &amp; REVIEW</span>
-        <h2>Study notebooks</h2>
-        <p>Create a notebook for each class. Add pages, search your notes, pin important topics, and edit or delete them whenever you need.</p>
-        <div class="learning-hub-metric"><strong>{{ notebook_count }}</strong><span>notebooks</span><i>·</i><strong>{{ notebook_pages }}</strong><span>pages</span></div>
+        <h2>Class notebook</h2>
+        <p>One place to take your own notes in class. Write a page for each lecture, then reopen, search, edit, or delete your notes whenever you need.</p>
+        <div class="learning-hub-metric"><strong>{{ notebook_pages }}</strong><span>saved pages</span></div>
         <div class="learning-hub-actions">
-            <a class="primary-button button-link" href="{% url 'dashboard:notebooks' %}">Open notebooks <span aria-hidden="true">↗</span></a>
-            <a class="text-link" href="{% url 'dashboard:add_notebook' %}">Create notebook</a>
+            <a class="primary-button button-link" href="{% url 'dashboard:notebooks' %}">Open class notebook <span aria-hidden="true">↗</span></a>
+            <a class="text-link" href="{% url 'dashboard:notebooks' %}">Start writing</a>
         </div>
     </article>
 

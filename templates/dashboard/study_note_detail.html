@@ -5,7 +5,7 @@
 <article class="nb-sheet">
     <div class="nb-sheet-head">
         <div>
-            <a class="back-link" href="{% url 'dashboard:notebook_detail' notebook.pk %}">← {{ notebook.title }}</a>
+            <a class="back-link" href="{% url 'dashboard:notebooks' %}">← Back to class notebook</a>
             <h1>{{ note.title }}</h1>
         </div>
         <div>
@@ -32,7 +32,7 @@
 {% if siblings %}
 <section class="dashboard-block" aria-labelledby="nb-siblings-title">
     <div class="section-heading">
-        <div><span class="section-kicker">IN THIS NOTEBOOK</span><h2 id="nb-siblings-title">More pages in {{ notebook.title }}</h2></div>
+        <div><span class="section-kicker">MORE CLASS NOTES</span><h2 id="nb-siblings-title">Other saved pages</h2></div>
     </div>
     <ul class="nb-siblings">
         {% for other in siblings %}

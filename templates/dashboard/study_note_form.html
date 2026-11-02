@@ -2,23 +2,24 @@
 {% block title %}{% if is_edit %}Edit page{% else %}New page{% endif %} · {{ notebook.title }}{% endblock %}
 {% block breadcrumb %}{% if is_edit %}Edit page{% else %}New page{% endif %}{% endblock %}
 {% block content %}
-{% if is_edit %}{% url 'dashboard:study_note_detail' notebook.pk note.pk as back_url %}{% else %}{% url 'dashboard:notebook_detail' notebook.pk as back_url %}{% endif %}
+{% if is_edit %}{% url 'dashboard:study_note_detail' notebook.pk note.pk as back_url %}{% else %}{% url 'dashboard:notebooks' as back_url %}{% endif %}
 <section class="form-page-heading">
-    <a class="back-link" href="{{ back_url }}">← Back to {{ notebook.title }}</a>
-    <span class="section-kicker">{% if is_edit %}UPDATE PAGE{% else %}{{ notebook.title|upper }}{% endif %}</span>
-    <h1>{% if is_edit %}Edit page{% else %}Write a new page{% endif %}</h1>
-    <p>Saved privately to <strong>{{ notebook.title }}</strong>. You can open and read it again at any time.</p>
+    <a class="back-link" href="{{ back_url }}">← Back to class notebook</a>
+    <span class="section-kicker">{% if is_edit %}UPDATE YOUR NOTES{% else %}CLASS NOTEBOOK{% endif %}</span>
+    <h1>{% if is_edit %}Edit class notes{% else %}Take class notes{% endif %}</h1>
+    <p>{% if is_edit %}Make changes to this page and save when you are done.{% else %}Give this page a title, then write your notes below. Your work is saved privately so you can return to it later.{% endif %}</p>
 </section>
 
 <form method="post" class="workspace-form nb-form">
     {% csrf_token %}
     <div class="form-field field-wide">
-        <label for="{{ form.title.id_for_label }}">Page title</label>
+        <label for="{{ form.title.id_for_label }}">Class or topic</label>
         {{ form.title }}
         {% for error in form.title.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
     </div>
     <div class="form-field field-wide">
-        <label for="{{ form.body.id_for_label }}">Notes</label>
+        <label for="{{ form.body.id_for_label }}">Your notes</label>
+        <small>Type freely. Line breaks are kept when you reopen this page.</small>
         {{ form.body }}
         {% for error in form.body.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
     </div>

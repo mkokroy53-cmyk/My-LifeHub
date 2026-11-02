@@ -58,7 +58,7 @@ The dashboard captures now have dedicated private archive modules, full record e
 
 - Saved notes, meeting notes, and uploaded PDFs all open and read correctly. Notes and meeting notes render as a full reading page instead of a cramped block.
 - PDF previews render inside the learning library: `X_FRAME_OPTIONS` is now `SAMEORIGIN` (instead of `DENY`), and the preview response returns an inline PDF that only this origin may frame.
-- **Study notebooks** (Learning library): a shelf of notebooks for class and revision, each holding many pages. Notebooks carry a subject, course code, lecturer, and colour; pages can be created, edited, pinned, searched, opened, and deleted. Everything is owner-scoped.
+- **Class notebook** (Learning library): one direct note-taking space for class, with writable pages that can be searched, pinned, reopened, edited, and deleted. Existing saved pages remain accessible from the single workspace and all notes are owner-scoped.
 - **Assignments** (Learning library): coursework can be tracked by course, due date, priority, and submission status, with private create/edit/delete actions.
 - **PDF library** (Learning library): standalone PDF uploads live on a separate shelf and are not attached to notebooks or assignments.
 - **Meeting notes** (Life archive): a separate record type for meetings, so meeting notes never mix with study pages. They are written, saved, listed, and read back like any other archive record.

@@ -11,7 +11,7 @@ from django.urls import reverse
 
 from finance.models import FinanceTransaction
 
-from .models import Assignment, DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
+from .models import Assignment, DashboardEntry, DashboardNotebook, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
 
 
 class DashboardAccessTests(TestCase):
@@ -943,14 +943,37 @@ class StudyNotebookTests(TestCase):
         data.update(overrides)
         return DashboardNotebook.objects.create(**data)
 
-    def test_notebook_shelf_renders_and_is_reachable_from_library(self):
-        self.make_notebook()
-        shelf = self.client.get(reverse('dashboard:notebooks'))
-        self.assertEqual(shelf.status_code, 200)
-        self.assertContains(shelf, 'Organic Chemistry')
-
+    def test_class_notebook_is_directly_reachable_from_learning_library(self):
         library = self.client.get(reverse('dashboard:learning'))
         self.assertContains(library, reverse('dashboard:notebooks'))
+
+        notebook = self.make_notebook()
+        workspace = self.client.get(reverse('dashboard:notebooks'))
+        self.assertEqual(workspace.status_code, 200)
+        self.assertContains(workspace, 'YOUR CLASS NOTES')
+        self.assertContains(workspace, 'Write class notes')
+        self.assertContains(workspace, 'Organic Chemistry')
+        self.assertNotContains(workspace, 'New notebook')
+
+    def test_class_notebook_is_created_automatically_and_accepts_class_notes(self):
+        workspace = self.client.get(reverse('dashboard:notebooks'))
+        notebook = DashboardNotebook.objects.get(user=self.user)
+        self.assertEqual(notebook.title, 'Class Notebook')
+        self.assertContains(workspace, reverse('dashboard:add_study_note', kwargs={'notebook_id': notebook.pk}))
+
+        saved = self.client.post(
+            reverse('dashboard:add_study_note', kwargs={'notebook_id': notebook.pk}),
+            {'title': 'Monday lecture', 'body': 'Write down what the lecturer explains.'},
+        )
+        page = notebook.notes.get(title='Monday lecture')
+        self.assertRedirects(
+            saved,
+            reverse('dashboard:study_note_detail', kwargs={'notebook_id': notebook.pk, 'note_id': page.pk}),
+        )
+        self.assertContains(
+            self.client.get(reverse('dashboard:notebooks')),
+            'Write down what the lecturer explains.',
+        )
 
     def test_create_notebook_and_write_a_page_that_can_be_read_back(self):
         created = self.client.post(
