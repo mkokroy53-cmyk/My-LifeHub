@@ -3,8 +3,8 @@
 {% block breadcrumb %}{{ resource.display_name }}{% endblock %}
 {% block content %}
 <section class="form-page-heading">
-    <a class="back-link" href="{% url 'dashboard:learning' %}">← Back to learning library</a>
-    <span class="section-kicker">{{ resource.get_category_display|upper }}</span>
+    <a class="back-link" href="{% url 'dashboard:pdfs' %}">← Back to PDF library</a>
+    <span class="section-kicker">PRIVATE PDF</span>
     <h1>{{ resource.display_name }}</h1>
     <p>Added {{ resource.uploaded_at|date:"j F Y, g:i A" }} · {{ resource.file_size|filesizeformat }}</p>
 </section>
@@ -25,7 +25,6 @@
         {% endif %}
 
         <dl class="entry-metadata">
-            <div><dt>Category</dt><dd>{{ resource.get_category_display }}</dd></div>
             <div><dt>File name</dt><dd>{{ resource.original_filename }}</dd></div>
             <div><dt>Size</dt><dd>{{ resource.file_size|filesizeformat }}</dd></div>
             <div><dt>Added</dt><dd>{{ resource.uploaded_at|date:"j F Y" }}</dd></div>

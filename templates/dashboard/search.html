@@ -100,7 +100,7 @@
                 {% for upload in file_results %}
                 <article class="module-entry-card">
                     <div class="module-entry-head">
-                        <div><span class="entry-kind-tag">{{ upload.get_category_display }} · {{ upload.file_size|filesizeformat }}</span><h2><a href="{% url 'dashboard:resource_detail' upload.pk %}">{{ upload.display_name }}</a></h2></div>
+                        <div><span class="entry-kind-tag">PDF · {{ upload.file_size|filesizeformat }}</span><h2><a href="{% url 'dashboard:resource_detail' upload.pk %}">{{ upload.display_name }}</a></h2></div>
                         <a class="secondary-button" href="{% url 'dashboard:download_file' upload.pk %}">Download</a>
                     </div>
                     <div class="entry-meta"><span>Added {{ upload.uploaded_at|date:"M d, Y" }}</span></div>

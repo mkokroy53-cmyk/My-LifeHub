@@ -44,8 +44,8 @@ The dashboard captures now have dedicated private archive modules, full record e
 ## Phase 6 files and portability
 
 - Life archive records can be edited and deleted with owner checks and explicit delete confirmation.
-- PDF uploads are limited to 15 MB, checked for a PDF signature, stored under a per-user private path, and downloaded only through an authenticated owner-checked view.
-- Personal ZIP export includes the signed-in user's life records, schedule, quotes, finance transactions, and uploaded PDF bytes; responses are marked private and non-cacheable.
+- PDF uploads are limited to 25 MB, checked for a PDF signature, stored under a per-user private path, and downloaded only through an authenticated owner-checked view.
+- Personal ZIP export includes the signed-in user's life records, schedule, quotes, finance transactions, study notebooks, assignments, and uploaded PDF bytes; responses are marked private and non-cacheable.
 
 ## Phase 7 immersive navigation
 
@@ -58,7 +58,9 @@ The dashboard captures now have dedicated private archive modules, full record e
 
 - Saved notes, meeting notes, and uploaded PDFs all open and read correctly. Notes and meeting notes render as a full reading page instead of a cramped block.
 - PDF previews render inside the learning library: `X_FRAME_OPTIONS` is now `SAMEORIGIN` (instead of `DENY`), and the preview response returns an inline PDF that only this origin may frame.
-- **Study notebook** (Library): a shelf of notebooks for class and revision, each holding many pages. Notebooks carry a subject, course code, lecturer, and colour; pages can be created, edited, pinned, searched, opened, and deleted. Everything is owner-scoped.
+- **Study notebooks** (Learning library): a shelf of notebooks for class and revision, each holding many pages. Notebooks carry a subject, course code, lecturer, and colour; pages can be created, edited, pinned, searched, opened, and deleted. Everything is owner-scoped.
+- **Assignments** (Learning library): coursework can be tracked by course, due date, priority, and submission status, with private create/edit/delete actions.
+- **PDF library** (Learning library): standalone PDF uploads live on a separate shelf and are not attached to notebooks or assignments.
 - **Meeting notes** (Life archive): a separate record type for meetings, so meeting notes never mix with study pages. They are written, saved, listed, and read back like any other archive record.
 - Notes and meeting notes can now be pinned (previously pinning was only available for diary entries).
 

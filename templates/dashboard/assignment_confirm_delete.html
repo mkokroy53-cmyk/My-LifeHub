@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Delete assignment · My-LifeHub{% endblock %}
+{% block breadcrumb %}Delete assignment{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:assignments' %}">← Back to assignments</a>
+    <span class="section-kicker">REMOVE COURSEWORK</span>
+    <h1>Delete "{{ assignment.title }}"?</h1>
+    <p>This will permanently remove this assignment from your private learning library.</p>
+</section>
+<section class="delete-confirm-panel">
+    <div class="delete-record"><strong>{{ assignment.title }}</strong><span>{{ assignment.get_status_display }}{% if assignment.due_date %} · Due {{ assignment.due_date|date:"j M Y" }}{% endif %}</span></div>
+    <form method="post" class="form-actions">{% csrf_token %}<a class="secondary-button" href="{% url 'dashboard:assignments' %}">Cancel</a><button class="danger-button" type="submit">Delete assignment</button></form>
+</section>
+{% endblock %}

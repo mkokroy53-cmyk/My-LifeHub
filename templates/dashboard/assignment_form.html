@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} · My-LifeHub{% endblock %}
+{% block breadcrumb %}{{ page_title }}{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:assignments' %}">← Back to assignments</a>
+    <span class="section-kicker">{% if is_edit %}UPDATE COURSEWORK{% else %}PLAN YOUR WORK{% endif %}</span>
+    <h1>{{ page_title }}</h1>
+    <p>Record the course, due date, priority, and status. PDFs are managed separately in your PDF library.</p>
+</section>
+<form method="post" class="workspace-form">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="form-field{% if field.name == 'description' %} field-wide{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+    </div>
+    {% endfor %}
+    {% if form.non_field_errors %}<div class="form-alert field-wide">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-actions field-wide">
+        <a class="secondary-button" href="{% url 'dashboard:assignments' %}">Cancel</a>
+        <button class="primary-button" type="submit">{% if is_edit %}Save changes{% else %}Save assignment{% endif %} <span aria-hidden="true">↗</span></button>
+    </div>
+</form>
+{% endblock %}

@@ -2,7 +2,7 @@ from pathlib import PurePosixPath
 
 from django import forms
 
-from .models import DashboardEntry, DashboardNotebook, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload, StudyNote
+from .models import Assignment, DashboardEntry, DashboardNotebook, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload, StudyNote
 
 
 class DashboardEntryForm(forms.ModelForm):
@@ -127,10 +127,30 @@ class StudyNoteForm(forms.ModelForm):
         self.fields['is_pinned'].required = False
 
 
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = ['title', 'course', 'due_date', 'status', 'priority', 'description']
+        widgets = {
+            'due_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={
+                'rows': 6,
+                'placeholder': 'Instructions, requirements, or reminders...',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['title'].widget.attrs.update({'autofocus': True, 'maxlength': 180})
+        self.fields['course'].required = False
+        self.fields['due_date'].required = False
+        self.fields['description'].required = False
+
+
 class LearningResourceForm(forms.ModelForm):
     class Meta:
         model = PrivatePDFUpload
-        fields = ['title', 'category', 'notes', 'file']
+        fields = ['title', 'notes', 'file']
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional notes about this material...'}),
         }

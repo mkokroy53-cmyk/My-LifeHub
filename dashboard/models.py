@@ -97,6 +97,43 @@ class DashboardEntry(models.Model):
 		return f'{months} month{"s" if months != 1 else ""}'
 
 
+class Assignment(models.Model):
+	class Status(models.TextChoices):
+		NOT_STARTED = 'not_started', 'Not started'
+		IN_PROGRESS = 'in_progress', 'In progress'
+		SUBMITTED = 'submitted', 'Submitted'
+
+	class Priority(models.TextChoices):
+		LOW = 'low', 'Low'
+		MEDIUM = 'medium', 'Medium'
+		HIGH = 'high', 'High'
+
+	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='assignments')
+	title = models.CharField(max_length=180)
+	course = models.CharField(max_length=120, blank=True)
+	description = models.TextField(blank=True)
+	due_date = models.DateField(null=True, blank=True, db_index=True)
+	status = models.CharField(max_length=16, choices=Status.choices, default=Status.NOT_STARTED, db_index=True)
+	priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.MEDIUM)
+	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+	updated_at = models.DateTimeField(auto_now=True)
+
+	class Meta:
+		ordering = ['due_date', '-updated_at']
+		indexes = [models.Index(fields=['user', 'status', 'due_date'])]
+
+	def __str__(self):
+		return self.title
+
+	@property
+	def is_overdue(self):
+		return bool(
+			self.due_date
+			and self.due_date < timezone.localdate()
+			and self.status != self.Status.SUBMITTED
+		)
+
+
 class DashboardNotebook(models.Model):
 	"""A study notebook for class and revision, kept apart from the life archive."""
 

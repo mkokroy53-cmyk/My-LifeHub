@@ -17,6 +17,7 @@ from django.views.decorators.http import require_http_methods
 from finance.models import FinanceTransaction
 
 from .forms import (
+    AssignmentForm,
     DashboardEntryForm,
     DashboardQuoteForm,
     DashboardScheduleForm,
@@ -26,6 +27,7 @@ from .forms import (
     StudyNoteForm,
 )
 from .models import (
+    Assignment,
     DashboardEntry,
     DashboardNotebook,
     DashboardQuote,
@@ -370,8 +372,7 @@ def delete_entry(request, kind, entry_id):
 
 @login_required
 def files(request):
-    # Legacy private-files page; redirects to the unified learning library.
-    return redirect('dashboard:learning')
+    return redirect('dashboard:pdfs')
 
 
 @login_required
@@ -416,7 +417,7 @@ def delete_file(request, upload_id):
         upload.file.delete(save=False)
         upload.delete()
         messages.success(request, 'PDF deleted.')
-        return redirect('dashboard:files')
+        return redirect('dashboard:pdfs')
     return render(request, 'dashboard/file_confirm_delete.html', {'upload': upload})
 
 
@@ -427,6 +428,21 @@ def export(request):
     export_data = {
         'format_version': 1,
         'exported_at': timezone.now(),
+        'assignments': list(
+            Assignment.objects.filter(user=user).values(
+                'title', 'course', 'description', 'due_date', 'status', 'priority', 'created_at', 'updated_at',
+            )
+        ),
+        'notebooks': [
+            {
+                'title': notebook.title,
+                'subject': notebook.subject,
+                'course_code': notebook.course_code,
+                'lecturer': notebook.lecturer,
+                'pages': list(notebook.notes.values('title', 'body', 'is_pinned', 'created_at', 'updated_at')),
+            }
+            for notebook in DashboardNotebook.objects.filter(user=user).prefetch_related('notes')
+        ],
         'entries': list(
             DashboardEntry.objects.filter(user=user).values(
                 'kind', 'title', 'description', 'status', 'progress', 'target_date', 'created_at', 'updated_at',
@@ -719,10 +735,28 @@ def diary_workspace(request):
 
 @login_required
 def learning_library(request):
-    """Learning home: PDF resources with categories, filter, and search."""
-    query = request.GET.get('q', '').strip()
-    category = request.GET.get('category', '').strip()
+    """Learning hub for independent notebooks, assignments, and PDF files."""
+    user = request.user
+    assignments = Assignment.objects.filter(user=user)
+    open_assignments = assignments.exclude(status=Assignment.Status.SUBMITTED)
+    return render(
+        request,
+        'dashboard/learning.html',
+        {
+            'notebook_count': DashboardNotebook.objects.filter(user=user).count(),
+            'notebook_pages': StudyNote.objects.filter(notebook__user=user).count(),
+            'assignment_count': assignments.count(),
+            'open_assignment_count': open_assignments.count(),
+            'next_assignment': open_assignments.filter(due_date__isnull=False).order_by('due_date').first(),
+            'pdf_count': PrivatePDFUpload.objects.filter(user=user).count(),
+            'pdf_total_size': sum(PrivatePDFUpload.objects.filter(user=user).values_list('file_size', flat=True)),
+        },
+    )
 
+
+@login_required
+def pdf_library(request):
+    query = request.GET.get('q', '').strip()
     resources = PrivatePDFUpload.objects.filter(user=request.user)
     if query:
         resources = resources.filter(
@@ -730,34 +764,14 @@ def learning_library(request):
             | Q(original_filename__icontains=query)
             | Q(notes__icontains=query)
         )
-    if category in PrivatePDFUpload.Category.values:
-        resources = resources.filter(category=category)
-
-    total = PrivatePDFUpload.objects.filter(user=request.user).count()
-    total_size = sum(PrivatePDFUpload.objects.filter(user=request.user).values_list('file_size', flat=True))
-
-    category_counts = []
-    for value, label in PrivatePDFUpload.Category.choices:
-        count = PrivatePDFUpload.objects.filter(user=request.user, category=value).count()
-        category_counts.append({'value': value, 'label': label, 'count': count})
-
-    notes = DashboardEntry.objects.filter(
-        user=request.user,
-        kind=DashboardEntry.Kind.NOTE,
-    ).order_by('-updated_at')[:5]
-
     return render(
         request,
-        'dashboard/learning.html',
+        'dashboard/pdf_library.html',
         {
             'resources': resources,
             'query': query,
-            'selected_category': category,
-            'category_choices': PrivatePDFUpload.Category.choices,
-            'category_counts': category_counts,
-            'total': total,
-            'total_size': total_size,
-            'notes': notes,
+            'total': PrivatePDFUpload.objects.filter(user=request.user).count(),
+            'total_size': sum(PrivatePDFUpload.objects.filter(user=request.user).values_list('file_size', flat=True)),
         },
     )
 
@@ -776,7 +790,7 @@ def add_resource(request):
             resource.file_size = resource.file.size
             resource.save()
             messages.success(request, f'"{resource.display_name}" added to your learning library.')
-            return redirect('dashboard:learning')
+            return redirect('dashboard:pdfs')
     else:
         form = LearningResourceForm()
     return render(
@@ -818,6 +832,85 @@ def edit_resource(request, upload_id):
         'dashboard/learning_upload.html',
         {'form': form, 'page_title': 'Edit learning material', 'resource': resource, 'is_edit': True},
     )
+
+
+@login_required
+def assignments(request):
+    query = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '').strip()
+    items = Assignment.objects.filter(user=request.user)
+    if query:
+        items = items.filter(
+            Q(title__icontains=query) | Q(course__icontains=query) | Q(description__icontains=query)
+        )
+    if status in Assignment.Status.values:
+        items = items.filter(status=status)
+    return render(
+        request,
+        'dashboard/assignments.html',
+        {
+            'assignments': items,
+            'query': query,
+            'selected_status': status,
+            'status_choices': Assignment.Status.choices,
+            'total': Assignment.objects.filter(user=request.user).count(),
+            'open_total': Assignment.objects.filter(user=request.user).exclude(
+                status=Assignment.Status.SUBMITTED
+            ).count(),
+            'submitted_total': Assignment.objects.filter(
+                user=request.user, status=Assignment.Status.SUBMITTED
+            ).count(),
+        },
+    )
+
+
+@login_required
+def add_assignment(request):
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.user = request.user
+            assignment.save()
+            messages.success(request, f'"{assignment.title}" added to your assignments.')
+            return redirect('dashboard:assignments')
+    else:
+        form = AssignmentForm()
+    return render(
+        request,
+        'dashboard/assignment_form.html',
+        {'form': form, 'page_title': 'New assignment', 'is_edit': False},
+    )
+
+
+@login_required
+def edit_assignment(request, assignment_id):
+    assignment = get_object_or_404(Assignment, user=request.user, pk=assignment_id)
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST, instance=assignment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Assignment updated.')
+            return redirect('dashboard:assignments')
+    else:
+        form = AssignmentForm(instance=assignment)
+    return render(
+        request,
+        'dashboard/assignment_form.html',
+        {'form': form, 'assignment': assignment, 'page_title': 'Edit assignment', 'is_edit': True},
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def delete_assignment(request, assignment_id):
+    assignment = get_object_or_404(Assignment, user=request.user, pk=assignment_id)
+    if request.method == 'POST':
+        title = assignment.title
+        assignment.delete()
+        messages.success(request, f'"{title}" deleted.')
+        return redirect('dashboard:assignments')
+    return render(request, 'dashboard/assignment_confirm_delete.html', {'assignment': assignment})
 
 
 @login_required

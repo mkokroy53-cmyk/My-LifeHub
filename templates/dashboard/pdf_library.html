@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}PDF library · My-LifeHub{% endblock %}
+{% block breadcrumb %}PDF library{% endblock %}
+{% block content %}
+<section class="learning-hero">
+    <div class="learning-hero-copy">
+        <a class="back-link" href="{% url 'dashboard:learning' %}">← Back to learning library</a>
+        <span class="section-kicker">INDEPENDENT FILE STORAGE</span>
+        <h1>Your PDFs</h1>
+        <p>A private shelf for PDF files. These documents are not attached to notebooks or assignments.</p>
+    </div>
+    <a class="primary-button learning-upload-btn" href="{% url 'dashboard:add_resource' %}"><span>Upload PDF</span><span aria-hidden="true">＋</span></a>
+</section>
+
+<section class="learning-stats" aria-label="PDF library statistics">
+    <div class="learning-stat-card"><span class="diary-stat-icon icon-blue" aria-hidden="true">PDF</span><div><strong>{{ total }}</strong><span>PDF files</span></div></div>
+    <div class="learning-stat-card"><span class="diary-stat-icon icon-lime" aria-hidden="true">⇩</span><div><strong>{{ total_size|filesizeformat }}</strong><span>Total storage</span></div></div>
+</section>
+
+<form method="get" class="learning-search">
+    <input type="search" name="q" value="{{ query }}" placeholder="Search PDFs by title, filename, or notes..." aria-label="Search PDFs">
+    <button type="submit" class="primary-button">Search</button>
+</form>
+
+<section class="learning-grid" aria-label="PDF files">
+    {% if resources %}
+        {% for resource in resources %}
+        <article class="learning-card">
+            <a class="learning-card-cover" href="{% url 'dashboard:resource_detail' resource.pk %}"><span class="pdf-mark" aria-hidden="true">PDF</span></a>
+            <div class="learning-card-body">
+                <span class="learning-cat-tag">PDF document</span>
+                <h3><a href="{% url 'dashboard:resource_detail' resource.pk %}">{{ resource.display_name }}</a></h3>
+                {% if resource.notes %}<p>{{ resource.notes|truncatechars:100 }}</p>{% else %}<p class="muted">No notes added.</p>{% endif %}
+                <div class="learning-card-meta"><span>{{ resource.file_size|filesizeformat }}</span><span>{{ resource.uploaded_at|date:"j M Y" }}</span></div>
+            </div>
+            <div class="learning-card-actions">
+                <a class="secondary-button" href="{% url 'dashboard:download_file' resource.pk %}">Download</a>
+                <a class="icon-link" href="{% url 'dashboard:resource_detail' resource.pk %}" title="Open PDF">→</a>
+            </div>
+        </article>
+        {% endfor %}
+    {% else %}
+        <div class="quiet-empty learning-empty">
+            <span class="empty-mark">PDF</span>
+            <div><strong>{% if query %}No PDFs match "{{ query }}".{% else %}Your PDF shelf is empty.{% endif %}</strong><p>Upload a PDF here. It will stay independent of your notebooks and assignments.</p></div>
+            <a class="text-link" href="{% url 'dashboard:add_resource' %}">Upload your first PDF <span aria-hidden="true">↗</span></a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

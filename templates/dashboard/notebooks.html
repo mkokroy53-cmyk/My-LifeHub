@@ -3,7 +3,7 @@
 {% block breadcrumb %}Study notebook{% endblock %}
 {% block content %}
 <section class="form-page-heading">
-    <a class="back-link" href="{% url 'dashboard:library' %}">← Back to library</a>
+    <a class="back-link" href="{% url 'dashboard:learning' %}">← Back to learning library</a>
     <span class="section-kicker">CLASS &amp; REVISION</span>
     <h1>Study notebook</h1>
     <p>Your class notebooks live here — separate from the meeting notes in your life archive. Every page you write is saved so you can open and revise it later.</p>
@@ -50,6 +50,8 @@
         {% endif %}
         <div class="nb-card-foot">
             <a class="text-link" href="{% url 'dashboard:notebook_detail' item.notebook.pk %}">Open notebook <span aria-hidden="true">↗</span></a>
+            <a class="text-link" href="{% url 'dashboard:edit_notebook' item.notebook.pk %}">Edit</a>
+            <a class="text-link danger-text-link" href="{% url 'dashboard:delete_notebook' item.notebook.pk %}">Delete</a>
             {% if item.pinned_count %}<span class="nb-pinned-tag">★ {{ item.pinned_count }} pinned</span>{% endif %}
         </div>
     </article>

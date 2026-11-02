@@ -3,10 +3,10 @@
 {% block breadcrumb %}{{ page_title }}{% endblock %}
 {% block content %}
 <section class="form-page-heading">
-    <a class="back-link" href="{% if is_edit %}{% url 'dashboard:resource_detail' resource.pk %}{% else %}{% url 'dashboard:learning' %}{% endif %}">← {% if is_edit %}Back to material{% else %}Back to learning library{% endif %}</a>
-    <span class="section-kicker">{% if is_edit %}UPDATE MATERIAL{% else %}ADD TO YOUR SHELF{% endif %}</span>
+    <a class="back-link" href="{% if is_edit %}{% url 'dashboard:resource_detail' resource.pk %}{% else %}{% url 'dashboard:pdfs' %}{% endif %}">← {% if is_edit %}Back to PDF{% else %}Back to PDF library{% endif %}</a>
+    <span class="section-kicker">{% if is_edit %}UPDATE PDF DETAILS{% else %}PDF ONLY · PRIVATE STORAGE{% endif %}</span>
     <h1>{{ page_title }}</h1>
-    <p>{% if is_edit %}Update the details for this learning material.{% else %}Upload a PDF and give it a title so you can find it fast later.{% endif %}</p>
+    <p>{% if is_edit %}Update the title or notes for this standalone PDF.{% else %}Upload a PDF directly to its own shelf. It will not be filed under a notebook, assignment, or category.{% endif %}</p>
 </section>
 
 <form method="post" enctype="multipart/form-data" class="workspace-form">
@@ -22,8 +22,8 @@
     {% endfor %}
     {% if form.non_field_errors %}<div class="form-alert field-wide">{{ form.non_field_errors }}</div>{% endif %}
     <div class="form-actions field-wide">
-        <a class="secondary-button" href="{% if is_edit %}{% url 'dashboard:resource_detail' resource.pk %}{% else %}{% url 'dashboard:learning' %}{% endif %}">Cancel</a>
-        <button class="primary-button" type="submit">{% if is_edit %}Save changes{% else %}Add to library{% endif %} <span aria-hidden="true">↗</span></button>
+        <a class="secondary-button" href="{% if is_edit %}{% url 'dashboard:resource_detail' resource.pk %}{% else %}{% url 'dashboard:pdfs' %}{% endif %}">Cancel</a>
+        <button class="primary-button" type="submit">{% if is_edit %}Save changes{% else %}Upload PDF{% endif %} <span aria-hidden="true">↗</span></button>
     </div>
 </form>
 {% endblock %}

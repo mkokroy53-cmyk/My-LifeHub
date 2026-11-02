@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
+from .models import Assignment, DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
+
+
+@admin.register(Assignment)
+class AssignmentAdmin(admin.ModelAdmin):
+	list_display = ['title', 'course', 'due_date', 'status', 'priority', 'user']
+	list_filter = ['status', 'priority', 'due_date']
+	search_fields = ['title', 'course', 'description', 'user__username']
+	ordering = ['due_date', '-updated_at']
 
 
 @admin.register(DashboardEntry)

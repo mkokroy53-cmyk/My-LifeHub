@@ -11,7 +11,7 @@ from django.urls import reverse
 
 from finance.models import FinanceTransaction
 
-from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
+from .models import Assignment, DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
 
 
 class DashboardAccessTests(TestCase):
@@ -326,7 +326,7 @@ class PrivatePDFTests(TestCase):
             {'title': 'Personal PDF', 'category': 'other', 'file': self.make_pdf()},
         )
 
-        self.assertRedirects(upload_response, reverse('dashboard:learning'))
+        self.assertRedirects(upload_response, reverse('dashboard:pdfs'))
         upload = PrivatePDFUpload.objects.get(original_filename='personal.pdf')
         self.assertEqual(upload.user, self.user)
         self.assertTrue(upload.file.name.startswith(f'private_uploads/{self.user.pk}/'))
@@ -338,7 +338,7 @@ class PrivatePDFTests(TestCase):
             file=other_upload_file,
             file_size=other_upload_file.size,
         )
-        library_response = self.client.get(reverse('dashboard:learning'))
+        library_response = self.client.get(reverse('dashboard:pdfs'))
         self.assertContains(library_response, 'Personal PDF')
         self.assertNotContains(library_response, 'Other file')
 
@@ -353,9 +353,9 @@ class PrivatePDFTests(TestCase):
         self.assertEqual(self.client.post(reverse('dashboard:delete_file', kwargs={'upload_id': upload.pk})).status_code, 404)
         self.assertTrue(PrivatePDFUpload.objects.filter(pk=upload.pk).exists())
 
-    def test_legacy_files_url_redirects_to_learning(self):
+    def test_legacy_files_url_redirects_to_pdf_shelf(self):
         response = self.client.get(reverse('dashboard:files'))
-        self.assertRedirects(response, reverse('dashboard:learning'))
+        self.assertRedirects(response, reverse('dashboard:pdfs'))
 
     def test_upload_rejects_fake_pdf_content(self):
         response = self.client.post(
@@ -514,23 +514,25 @@ class LearningLibraryTests(TestCase):
         response = self.client.get(reverse('dashboard:learning'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Learning library')
+        self.assertContains(response, reverse('dashboard:notebooks'))
+        self.assertContains(response, reverse('dashboard:assignments'))
+        self.assertContains(response, reverse('dashboard:pdfs'))
 
-    def test_upload_resource_persists_with_metadata(self):
+    def test_upload_resource_is_independent_of_notebooks_and_categories(self):
         response = self.client.post(
             reverse('dashboard:add_resource'),
             {
                 'title': 'Data Structures Notes',
-                'category': 'lecture',
                 'notes': 'Week 1 to 4',
                 'file': self.make_pdf(),
             },
         )
-        self.assertRedirects(response, reverse('dashboard:learning'))
+        self.assertRedirects(response, reverse('dashboard:pdfs'))
         resource = PrivatePDFUpload.objects.get(title='Data Structures Notes')
         self.assertEqual(resource.user, self.user)
-        self.assertEqual(resource.category, 'lecture')
         self.assertEqual(resource.original_filename, 'notes.pdf')
         self.assertEqual(resource.notes, 'Week 1 to 4')
+        self.assertNotContains(self.client.get(reverse('dashboard:add_resource')), 'name="category"')
 
     def test_resources_are_private_to_the_owner(self):
         PrivatePDFUpload.objects.create(
@@ -540,10 +542,10 @@ class LearningLibraryTests(TestCase):
             file=self.make_pdf('private.pdf'),
             file_size=30,
         )
-        response = self.client.get(reverse('dashboard:learning'))
+        response = self.client.get(reverse('dashboard:pdfs'))
         self.assertNotContains(response, 'Other user material')
 
-    def test_category_filter_works(self):
+    def test_pdf_shelf_searches_without_category_filters(self):
         PrivatePDFUpload.objects.create(
             user=self.user,
             original_filename='slides.pdf',
@@ -552,9 +554,9 @@ class LearningLibraryTests(TestCase):
             file=self.make_pdf('slides.pdf'),
             file_size=30,
         )
-        response = self.client.get(reverse('dashboard:learning'), {'category': 'slides'})
+        response = self.client.get(reverse('dashboard:pdfs'), {'q': 'Chapter'})
         self.assertContains(response, 'Chapter Slides')
-        response = self.client.get(reverse('dashboard:learning'), {'category': 'exam'})
+        response = self.client.get(reverse('dashboard:pdfs'), {'q': 'missing'})
         self.assertNotContains(response, 'Chapter Slides')
 
     def test_resource_detail_is_user_scoped(self):
@@ -576,6 +578,79 @@ class LearningLibraryTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(PrivatePDFUpload.objects.filter(title='Bad file').exists())
+
+
+class AssignmentLibraryTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username='assignment-owner', password='a-strong-test-password')
+        self.other_user = user_model.objects.create_user(username='assignment-other', password='a-strong-test-password')
+        self.client.force_login(self.user)
+
+    def test_assignment_can_be_created_edited_filtered_and_deleted(self):
+        created = self.client.post(
+            reverse('dashboard:add_assignment'),
+            {
+                'title': 'Research essay',
+                'course': 'COMP 305',
+                'due_date': date(2026, 12, 1).isoformat(),
+                'status': Assignment.Status.IN_PROGRESS,
+                'priority': Assignment.Priority.HIGH,
+                'description': 'Compare the two approaches.',
+            },
+        )
+        self.assertRedirects(created, reverse('dashboard:assignments'))
+        assignment = Assignment.objects.get(title='Research essay')
+        self.assertEqual(assignment.user, self.user)
+
+        listing = self.client.get(reverse('dashboard:assignments'))
+        self.assertContains(listing, 'Research essay')
+        self.assertContains(listing, 'COMP 305')
+        self.assertContains(listing, '1 December 2026')
+
+        filtered = self.client.get(reverse('dashboard:assignments'), {'status': Assignment.Status.SUBMITTED})
+        self.assertNotContains(filtered, 'Research essay')
+
+        edited = self.client.post(
+            reverse('dashboard:edit_assignment', kwargs={'assignment_id': assignment.pk}),
+            {
+                'title': 'Research essay final',
+                'course': 'COMP 305',
+                'due_date': date(2026, 12, 1).isoformat(),
+                'status': Assignment.Status.SUBMITTED,
+                'priority': Assignment.Priority.HIGH,
+                'description': 'Submitted.',
+            },
+        )
+        self.assertRedirects(edited, reverse('dashboard:assignments'))
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.status, Assignment.Status.SUBMITTED)
+
+        deleted = self.client.post(reverse('dashboard:delete_assignment', kwargs={'assignment_id': assignment.pk}))
+        self.assertRedirects(deleted, reverse('dashboard:assignments'))
+        self.assertFalse(Assignment.objects.filter(pk=assignment.pk).exists())
+
+    def test_assignments_are_private_to_the_owner(self):
+        assignment = Assignment.objects.create(user=self.other_user, title='Private coursework')
+        self.assertNotContains(self.client.get(reverse('dashboard:assignments')), 'Private coursework')
+        self.assertEqual(
+            self.client.get(reverse('dashboard:edit_assignment', kwargs={'assignment_id': assignment.pk})).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(reverse('dashboard:delete_assignment', kwargs={'assignment_id': assignment.pk})).status_code,
+            404,
+        )
+        self.assertTrue(Assignment.objects.filter(pk=assignment.pk).exists())
+
+    def test_learning_hub_summarizes_only_owned_resources(self):
+        Assignment.objects.create(user=self.user, title='My assignment')
+        Assignment.objects.create(user=self.other_user, title='Private assignment')
+        response = self.client.get(reverse('dashboard:learning'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['assignment_count'], 1)
+        self.assertEqual(response.context['open_assignment_count'], 1)
+        self.assertNotContains(response, 'Private assignment')
 
 
 class QuoteRotationTests(TestCase):
@@ -874,7 +949,7 @@ class StudyNotebookTests(TestCase):
         self.assertEqual(shelf.status_code, 200)
         self.assertContains(shelf, 'Organic Chemistry')
 
-        library = self.client.get(reverse('dashboard:library'))
+        library = self.client.get(reverse('dashboard:learning'))
         self.assertContains(library, reverse('dashboard:notebooks'))
 
     def test_create_notebook_and_write_a_page_that_can_be_read_back(self):
