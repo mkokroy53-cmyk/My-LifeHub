@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Delete notebook · {{ notebook.title }}{% endblock %}
+{% block breadcrumb %}Delete notebook{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:notebook_detail' notebook.pk %}">← Back to notebook</a>
+    <span class="section-kicker">DELETE NOTEBOOK</span>
+    <h1>Delete "{{ notebook.title }}"?</h1>
+</section>
+<section class="delete-confirm-panel">
+    <div class="delete-record"><strong>{{ notebook.title }}</strong><span>{{ notebook.notes.count }} page{{ notebook.notes.count|pluralize }} will also be removed</span></div>
+    <p>This permanently deletes the notebook and every page inside it. It cannot be undone.</p>
+    <form method="post" class="form-actions">{% csrf_token %}<a class="secondary-button" href="{% url 'dashboard:notebook_detail' notebook.pk %}">Cancel</a><button class="danger-button" type="submit">Delete notebook</button></form>
+</section>
+{% endblock %}

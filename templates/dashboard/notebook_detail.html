@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ notebook.title }} · Study notebook{% endblock %}
+{% block breadcrumb %}{{ notebook.title }}{% endblock %}
+{% block content %}
+<section class="nb-head">
+    <div>
+        <a class="back-link" href="{% url 'dashboard:notebooks' %}">← Back to study notebooks</a>
+        <h1>{{ notebook.title }}</h1>
+        <p>
+            {% if notebook.course_code %}{{ notebook.course_code }} · {% endif %}
+            {% if notebook.subject %}{{ notebook.subject }} · {% endif %}
+            {% if notebook.lecturer %}{{ notebook.lecturer }} · {% endif %}
+            {{ note_count }} page{{ note_count|pluralize }}
+        </p>
+    </div>
+    <div class="nb-head-actions">
+        <a class="primary-button button-link" href="{% url 'dashboard:add_study_note' notebook.pk %}">New page <span aria-hidden="true">↗</span></a>
+        <a class="secondary-button" href="{% url 'dashboard:edit_notebook' notebook.pk %}">Edit notebook</a>
+        {% if notebook.is_pinned %}<span class="nb-pinned-tag">★ Pinned</span>{% endif %}
+    </div>
+</section>
+
+<section class="nb-toolbar">
+    <form method="get" class="module-search">
+        <input type="search" name="q" value="{{ query }}" placeholder="Search pages in this notebook..." aria-label="Search pages in this notebook">
+        <button type="submit" class="primary-button">Search</button>
+    </form>
+    <form method="post" action="{% url 'dashboard:toggle_notebook_pin' notebook.pk %}">{% csrf_token %}
+        <button class="secondary-button" type="submit">{% if notebook.is_pinned %}Unpin notebook{% else %}Pin notebook{% endif %}</button>
+    </form>
+</section>
+
+{% if notes %}
+<section class="nb-pages" aria-label="Pages in {{ notebook.title }}">
+    {% for note in notes %}
+    <article class="nb-page-row">
+        <div>
+            <h3>
+                <a href="{% url 'dashboard:study_note_detail' notebook.pk note.pk %}">{{ note.title }}</a>
+                {% if note.is_pinned %}<span class="nb-pinned-tag">★</span>{% endif %}
+            </h3>
+            <p>{% if note.body %}{{ note.body|truncatechars:220 }}{% else %}<em>No text yet.</em>{% endif %}</p>
+            <div class="nb-page-meta">
+                <span>Updated {{ note.updated_at|date:"j M Y, g:i A" }}</span>
+                <span>Created {{ note.created_at|date:"j M Y" }}</span>
+            </div>
+        </div>
+        <div class="nb-page-actions">
+            <a class="text-link" href="{% url 'dashboard:study_note_detail' notebook.pk note.pk %}">Read <span aria-hidden="true">↗</span></a>
+            <a class="text-link" href="{% url 'dashboard:edit_study_note' notebook.pk note.pk %}">Edit</a>
+        </div>
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<div class="quiet-empty module-empty">
+    <span class="empty-mark">✎</span>
+    <div>
+        <strong>{% if query %}No pages matched "{{ query }}".{% else %}This notebook is empty.{% endif %}</strong>
+        <p>Add a page for each lecture, then read or edit it any time.</p>
+    </div>
+    <a class="text-link" href="{% url 'dashboard:add_study_note' notebook.pk %}">Write the first page <span aria-hidden="true">↗</span></a>
+</div>
+{% endif %}
+
+<div class="form-actions nb-danger-row">
+    <a class="secondary-button danger-outline" href="{% url 'dashboard:delete_notebook' notebook.pk %}">Delete notebook</a>
+</div>
+{% endblock %}

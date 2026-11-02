@@ -3,10 +3,10 @@
 {% block breadcrumb %}{% if is_edit %}Edit{% else %}Add{% endif %} {{ item_title }}{% endblock %}
 {% block content %}
 <section class="form-page-heading">
-    <a class="back-link" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% else %}{% if kind == 'diary' %}{% url 'dashboard:diary' %}{% elif kind == 'project' %}{% url 'dashboard:projects' %}{% else %}{% url 'dashboard:index' %}{% endif %}{% endif %}">← {% if entry %}Back to record{% elif kind == 'diary' %}Back to diary{% elif kind == 'project' %}Back to projects{% else %}Back to overview{% endif %}</a>
+    <a class="back-link" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% else %}{% if kind == 'diary' %}{% url 'dashboard:diary' %}{% elif kind == 'project' %}{% url 'dashboard:projects' %}{% elif kind in 'note,meeting' %}{% url 'dashboard:entries_by_kind' kind %}{% else %}{% url 'dashboard:index' %}{% endif %}{% endif %}">← {% if entry %}Back to record{% elif kind == 'diary' %}Back to diary{% elif kind == 'project' %}Back to projects{% elif kind in 'note,meeting' %}Back to {{ item_title|lower }}{% else %}Back to overview{% endif %}</a>
     <span class="section-kicker">{% if is_edit %}UPDATE YOUR RECORD{% else %}NEW {{ item_title|upper }}{% endif %}</span>
     <h1>{% if is_edit %}Edit{% else %}Add a{% endif %} {{ item_title|lower }}</h1>
-    <p>{% if is_edit %}Update the details saved in your private archive.{% elif kind == 'diary' %}Write freely — this entry is saved privately and stays until you edit or delete it.{% elif kind == 'project' %}Describe the project, the period you worked on it, the stack you used, and how far along it is.{% else %}Fill in the details below and save. Everything you add is stored in your private archive.{% endif %}</p>
+    <p>{% if is_edit %}Update the details saved in your private archive.{% elif kind == 'diary' %}Write freely — this entry is saved privately and stays until you edit or delete it.{% elif kind == 'project' %}Describe the project, the period you worked on it, the stack you used, and how far along it is.{% elif kind == 'meeting' %}Capture who was there, what was discussed, the decisions made, and what happens next.{% else %}Fill in the details below and save. Everything you add is stored in your private archive.{% endif %}</p>
 </section>
 <form method="post" class="workspace-form{% if kind == 'diary' %} diary-form{% endif %}">
     {% csrf_token %}
@@ -90,7 +90,7 @@
 
     {% if form.non_field_errors %}<div class="form-alert field-wide">{{ form.non_field_errors }}</div>{% endif %}
     <div class="form-actions field-wide">
-        <a class="secondary-button" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% elif kind == 'diary' %}{% url 'dashboard:diary' %}{% elif kind == 'project' %}{% url 'dashboard:projects' %}{% else %}{% url 'dashboard:index' %}{% endif %}">Cancel</a>
+        <a class="secondary-button" href="{% if entry %}{% url 'dashboard:entry_detail' entry.kind entry.id %}{% elif kind == 'diary' %}{% url 'dashboard:diary' %}{% elif kind == 'project' %}{% url 'dashboard:projects' %}{% elif kind in 'note,meeting' %}{% url 'dashboard:entries_by_kind' kind %}{% else %}{% url 'dashboard:index' %}{% endif %}">Cancel</a>
         <button class="primary-button" type="submit">{% if is_edit %}Update{% else %}Save{% endif %} {{ item_title|lower }} <span aria-hidden="true">↗</span></button>
     </div>
 </form>

@@ -7,3 +7,5 @@ media/
 .env
 .pytest_cache/
 .coverage
+# Node tooling used for local UI checks
+node_modules/

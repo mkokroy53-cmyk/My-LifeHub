@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_edit %}Edit page{% else %}New page{% endif %} · {{ notebook.title }}{% endblock %}
+{% block breadcrumb %}{% if is_edit %}Edit page{% else %}New page{% endif %}{% endblock %}
+{% block content %}
+{% if is_edit %}{% url 'dashboard:study_note_detail' notebook.pk note.pk as back_url %}{% else %}{% url 'dashboard:notebook_detail' notebook.pk as back_url %}{% endif %}
+<section class="form-page-heading">
+    <a class="back-link" href="{{ back_url }}">← Back to {{ notebook.title }}</a>
+    <span class="section-kicker">{% if is_edit %}UPDATE PAGE{% else %}{{ notebook.title|upper }}{% endif %}</span>
+    <h1>{% if is_edit %}Edit page{% else %}Write a new page{% endif %}</h1>
+    <p>Saved privately to <strong>{{ notebook.title }}</strong>. You can open and read it again at any time.</p>
+</section>
+
+<form method="post" class="workspace-form nb-form">
+    {% csrf_token %}
+    <div class="form-field field-wide">
+        <label for="{{ form.title.id_for_label }}">Page title</label>
+        {{ form.title }}
+        {% for error in form.title.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+    </div>
+    <div class="form-field field-wide">
+        <label for="{{ form.body.id_for_label }}">Notes</label>
+        {{ form.body }}
+        {% for error in form.body.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+    </div>
+    <div class="form-field field-wide">
+        <label for="{{ form.is_pinned.id_for_label }}">{{ form.is_pinned }} Pin this page</label>
+    </div>
+
+    <div class="form-actions field-wide">
+        <a class="secondary-button" href="{{ back_url }}">Cancel</a>
+        <button class="primary-button" type="submit">Save page <span aria-hidden="true">↗</span></button>
+    </div>
+</form>
+{% endblock %}

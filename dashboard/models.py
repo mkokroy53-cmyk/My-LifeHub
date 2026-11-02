@@ -18,6 +18,7 @@ class DashboardEntry(models.Model):
 		PROJECT = 'project', 'Project'
 		GOAL = 'goal', 'Goal'
 		ACHIEVEMENT = 'achievement', 'Achievement'
+		MEETING = 'meeting', 'Meeting note'
 
 	class Status(models.TextChoices):
 		NEW = 'new', 'New'
@@ -94,6 +95,53 @@ class DashboardEntry(models.Model):
 			return ''
 		months = max(1, int(days / 30 + 0.5))
 		return f'{months} month{"s" if months != 1 else ""}'
+
+
+class DashboardNotebook(models.Model):
+	"""A study notebook for class and revision, kept apart from the life archive."""
+
+	class Color(models.TextChoices):
+		BLUE = 'blue', 'Blue'
+		LIME = 'lime', 'Lime'
+		CORAL = 'coral', 'Coral'
+		VIOLET = 'violet', 'Violet'
+
+	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notebooks')
+	title = models.CharField(max_length=160)
+	subject = models.CharField(max_length=120, blank=True)
+	course_code = models.CharField(max_length=60, blank=True)
+	lecturer = models.CharField(max_length=120, blank=True)
+	color = models.CharField(max_length=10, choices=Color.choices, default=Color.BLUE)
+	is_pinned = models.BooleanField(default=False)
+	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+	updated_at = models.DateTimeField(auto_now=True)
+
+	class Meta:
+		ordering = ['-is_pinned', '-updated_at']
+
+	def __str__(self):
+		return self.title
+
+
+class StudyNote(models.Model):
+	"""A single page inside a study notebook."""
+
+	notebook = models.ForeignKey(DashboardNotebook, on_delete=models.CASCADE, related_name='notes')
+	title = models.CharField(max_length=200)
+	body = models.TextField(blank=True)
+	is_pinned = models.BooleanField(default=False)
+	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+	updated_at = models.DateTimeField(auto_now=True)
+
+	class Meta:
+		ordering = ['-is_pinned', '-updated_at']
+
+	def __str__(self):
+		return self.title
+
+	@property
+	def excerpt(self):
+		return self.body.strip()[:220]
 
 
 class DashboardScheduleItem(models.Model):

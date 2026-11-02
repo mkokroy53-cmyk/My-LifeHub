@@ -2,7 +2,7 @@ from pathlib import PurePosixPath
 
 from django import forms
 
-from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
+from .models import DashboardEntry, DashboardNotebook, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload, StudyNote
 
 
 class DashboardEntryForm(forms.ModelForm):
@@ -41,12 +41,30 @@ class DashboardEntryForm(forms.ModelForm):
             self.fields['progress'].label = 'Progress'
             self.fields['progress'].help_text = 'How far along is this project? (0–100%)'
         if kind != DashboardEntry.Kind.DIARY:
-            for field_name in ['mood', 'is_pinned']:
-                self.fields.pop(field_name)
+            self.fields.pop('mood', None)
+            # Notes and meeting notes can be pinned too, so pinning is never lost.
+            if kind not in (DashboardEntry.Kind.NOTE, DashboardEntry.Kind.MEETING):
+                self.fields.pop('is_pinned', None)
         else:
             self.fields['title'].label = 'Entry title'
             self.fields['description'].label = "Today's thoughts"
             self.fields['description'].widget.attrs.update({'rows': 10, 'placeholder': 'Write freely about your day...'})
+
+        if kind == DashboardEntry.Kind.NOTE:
+            self.fields['description'].label = 'Note'
+            self.fields['description'].widget.attrs.update({
+                'rows': 12,
+                'placeholder': 'Write down anything you want to keep...',
+                'data-auto-grow': '',
+            })
+
+        if kind == DashboardEntry.Kind.MEETING:
+            self.fields['description'].label = 'Meeting notes'
+            self.fields['description'].widget.attrs.update({
+                'rows': 12,
+                'placeholder': 'Who attended, what was discussed, decisions, and follow-ups...',
+                'data-auto-grow': '',
+            })
 
         if kind == DashboardEntry.Kind.PROJECT:
             for field_name in project_fields:
@@ -69,6 +87,44 @@ class DashboardEntryForm(forms.ModelForm):
         if start and end and end < start:
             self.add_error('period_end', 'The end date must be after the start date.')
         return cleaned
+
+
+class NotebookForm(forms.ModelForm):
+    class Meta:
+        model = DashboardNotebook
+        fields = ['title', 'subject', 'course_code', 'lecturer', 'color']
+        widgets = {
+            'title': forms.TextInput(attrs={'placeholder': 'e.g. Organic Chemistry'}),
+            'subject': forms.TextInput(attrs={'placeholder': 'e.g. Chemistry'}),
+            'course_code': forms.TextInput(attrs={'placeholder': 'e.g. CHEM 201'}),
+            'lecturer': forms.TextInput(attrs={'placeholder': 'e.g. Dr. Mensah'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['title'].widget.attrs.update({'autofocus': True, 'maxlength': 160})
+        for name in ('subject', 'course_code', 'lecturer'):
+            self.fields[name].required = False
+
+
+class StudyNoteForm(forms.ModelForm):
+    class Meta:
+        model = StudyNote
+        fields = ['title', 'body', 'is_pinned']
+        widgets = {
+            'title': forms.TextInput(attrs={'placeholder': 'Topic for this page'}),
+            'body': forms.Textarea(attrs={
+                'rows': 16,
+                'data-auto-grow': '',
+                'placeholder': 'Start typing your class notes here...',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['title'].widget.attrs.update({'autofocus': True, 'maxlength': 200})
+        self.fields['body'].required = False
+        self.fields['is_pinned'].required = False
 
 
 class LearningResourceForm(forms.ModelForm):

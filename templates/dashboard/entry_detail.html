@@ -29,8 +29,8 @@
     {% endif %}
 
     {% if entry.description %}
-        <div class="detail-copy">
-            <h2>{% if entry.kind == 'diary' %}Entry{% elif entry.kind == 'project' %}Overview{% else %}Details{% endif %}</h2>
+        <div class="detail-copy{% if entry.kind == 'note' or entry.kind == 'meeting' %} detail-copy-reading{% endif %}">
+            <h2>{% if entry.kind == 'diary' %}Entry{% elif entry.kind == 'project' %}Overview{% elif entry.kind == 'meeting' %}Meeting notes{% else %}Details{% endif %}</h2>
             <p>{{ entry.description|linebreaksbr }}</p>
         </div>
     {% endif %}

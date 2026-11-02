@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{{ note.title }} · {{ notebook.title }}{% endblock %}
+{% block breadcrumb %}{{ notebook.title }}{% endblock %}
+{% block content %}
+<article class="nb-sheet">
+    <div class="nb-sheet-head">
+        <div>
+            <a class="back-link" href="{% url 'dashboard:notebook_detail' notebook.pk %}">← {{ notebook.title }}</a>
+            <h1>{{ note.title }}</h1>
+        </div>
+        <div>
+            {% if note.is_pinned %}<span class="nb-pinned-tag">★ Pinned</span>{% endif %}
+        </div>
+    </div>
+
+    <div class="nb-sheet-body{% if not note.body %} is-blank{% endif %}">{{ note.body }}</div>
+
+    <div class="nb-sheet-foot">
+        <div>
+            <span class="section-kicker">UPDATED {{ note.updated_at|date:"j M Y, g:i A"|upper }}</span>
+        </div>
+        <div>
+            <form method="post" action="{% url 'dashboard:toggle_study_note_pin' notebook.pk note.pk %}">{% csrf_token %}
+                <button class="secondary-button" type="submit">{% if note.is_pinned %}Unpin{% else %}Pin{% endif %}</button>
+            </form>
+            <a class="secondary-button" href="{% url 'dashboard:delete_study_note' notebook.pk note.pk %}">Delete</a>
+            <a class="primary-button button-link" href="{% url 'dashboard:edit_study_note' notebook.pk note.pk %}">Edit page <span aria-hidden="true">↗</span></a>
+        </div>
+    </div>
+</article>
+
+{% if siblings %}
+<section class="dashboard-block" aria-labelledby="nb-siblings-title">
+    <div class="section-heading">
+        <div><span class="section-kicker">IN THIS NOTEBOOK</span><h2 id="nb-siblings-title">More pages in {{ notebook.title }}</h2></div>
+    </div>
+    <ul class="nb-siblings">
+        {% for other in siblings %}
+        <li><a href="{% url 'dashboard:study_note_detail' notebook.pk other.pk %}"><span>{{ other.title }}</span><small>{{ other.updated_at|date:"j M Y" }}</small></a></li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+{% endblock %}

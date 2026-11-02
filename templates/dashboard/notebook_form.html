@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ heading }} · Study notebook{% endblock %}
+{% block breadcrumb %}{{ heading }}{% endblock %}
+{% block content %}
+{% if is_edit %}{% url 'dashboard:notebook_detail' notebook.pk as back_url %}{% else %}{% url 'dashboard:notebooks' as back_url %}{% endif %}
+<section class="form-page-heading">
+    <a class="back-link" href="{{ back_url }}">← {% if is_edit %}Back to notebook{% else %}Back to study notebooks{% endif %}</a>
+    <span class="section-kicker">{% if is_edit %}UPDATE NOTEBOOK{% else %}NEW NOTEBOOK{% endif %}</span>
+    <h1>{{ heading }}</h1>
+    <p>Give the notebook a name and, optionally, the subject, course code, and lecturer so it is easy to find later.</p>
+</section>
+
+<form method="post" class="workspace-form">
+    {% csrf_token %}
+    {% for field in form %}
+        {% if field.name == 'color' %}
+        <div class="form-field field-wide">
+            <label>{{ field.label }}</label>
+            <div class="nb-color-choices">{{ field }}</div>
+            {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+        {% else %}
+        <div class="form-field{% if field.name == 'title' %} field-wide{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}<span class="field-error field-wide">{{ error }}</span>{% endfor %}
+
+    <div class="form-actions field-wide">
+        <a class="secondary-button" href="{{ back_url }}">Cancel</a>
+        <button class="primary-button" type="submit">{% if is_edit %}Save notebook{% else %}Create notebook{% endif %} <span aria-hidden="true">↗</span></button>
+    </div>
+</form>
+{% endblock %}

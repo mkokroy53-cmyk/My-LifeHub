@@ -54,6 +54,14 @@ The dashboard captures now have dedicated private archive modules, full record e
 - Short page transitions and section reveals honor reduced-motion preferences.
 - Galaxy-inspired midnight theme with CSS-rendered twinkling stars; Light mode remains available and the star animation stops for reduced-motion users.
 
+## Phase 8 notebooks and readable records
+
+- Saved notes, meeting notes, and uploaded PDFs all open and read correctly. Notes and meeting notes render as a full reading page instead of a cramped block.
+- PDF previews render inside the learning library: `X_FRAME_OPTIONS` is now `SAMEORIGIN` (instead of `DENY`), and the preview response returns an inline PDF that only this origin may frame.
+- **Study notebook** (Library): a shelf of notebooks for class and revision, each holding many pages. Notebooks carry a subject, course code, lecturer, and colour; pages can be created, edited, pinned, searched, opened, and deleted. Everything is owner-scoped.
+- **Meeting notes** (Life archive): a separate record type for meetings, so meeting notes never mix with study pages. They are written, saved, listed, and read back like any other archive record.
+- Notes and meeting notes can now be pinned (previously pinning was only available for diary entries).
+
 ## Technology
 
 - Python 3.13 (Python 3.11 or later recommended)
@@ -120,10 +128,10 @@ Then run `python manage.py migrate`. Database credentials belong only in `.env` 
 ```text
 config/          Django settings and root URL configuration
 accounts/        Django authentication routes
-dashboard/       Protected dashboard, archive CRUD, schedule, private files, export, and tests
+dashboard/       Protected dashboard, archive CRUD, notebooks, schedule, private files, export, and tests
 finance/         Private income/expense ledger, transaction forms, and tests
 templates/       Shared app shell and authentication screens
-static/css/      Responsive visual system
+static/css/      Responsive visual system (app.css, plus notebooks.css for study notebooks)
 static/js/       Mobile navigation behavior
 media/           Private local upload storage; not served through public URLs
 ```

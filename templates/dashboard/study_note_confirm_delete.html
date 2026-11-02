@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Delete page · {{ note.title }}{% endblock %}
+{% block breadcrumb %}Delete page{% endblock %}
+{% block content %}
+<section class="form-page-heading">
+    <a class="back-link" href="{% url 'dashboard:study_note_detail' notebook.pk note.pk %}">← Back to page</a>
+    <span class="section-kicker">DELETE PAGE</span>
+    <h1>Delete "{{ note.title }}"?</h1>
+</section>
+<section class="delete-confirm-panel">
+    <div class="delete-record"><strong>{{ note.title }}</strong><span>{{ notebook.title }}</span></div>
+    <p>This page will be removed from the notebook permanently.</p>
+    <form method="post" class="form-actions">{% csrf_token %}<a class="secondary-button" href="{% url 'dashboard:study_note_detail' notebook.pk note.pk %}">Cancel</a><button class="danger-button" type="submit">Delete page</button></form>
+</section>
+{% endblock %}

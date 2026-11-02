@@ -16,13 +16,29 @@ from django.views.decorators.http import require_http_methods
 
 from finance.models import FinanceTransaction
 
-from .forms import DashboardEntryForm, DashboardQuoteForm, DashboardScheduleForm, LearningResourceForm, PrivatePDFUploadForm
-from .models import DashboardEntry, DashboardQuote, DashboardScheduleItem, PrivatePDFUpload
+from .forms import (
+    DashboardEntryForm,
+    DashboardQuoteForm,
+    DashboardScheduleForm,
+    LearningResourceForm,
+    NotebookForm,
+    PrivatePDFUploadForm,
+    StudyNoteForm,
+)
+from .models import (
+    DashboardEntry,
+    DashboardNotebook,
+    DashboardQuote,
+    DashboardScheduleItem,
+    PrivatePDFUpload,
+    StudyNote,
+)
 
 
 ENTRY_STATS = [
     (DashboardEntry.Kind.DIARY, 'Diary entries', 'icon-coral'),
     (DashboardEntry.Kind.NOTE, 'Notes', 'icon-blue'),
+    (DashboardEntry.Kind.MEETING, 'Meeting notes', 'icon-violet'),
     (DashboardEntry.Kind.RESOURCE, 'Learning library', 'icon-lime'),
     (DashboardEntry.Kind.PROJECT, 'Projects', 'icon-blue'),
     (DashboardEntry.Kind.GOAL, 'Goals', 'icon-lime'),
@@ -383,8 +399,12 @@ def preview_file(request, upload_id):
         upload.file.open('rb'),
         content_type='application/pdf',
     )
-    response['Content-Disposition'] = f'inline; filename="{upload.original_filename}"'
+    safe_name = upload.original_filename.replace('"', '').replace('\\', '')
+    response['Content-Disposition'] = f'inline; filename="{safe_name}"'
     response['Cache-Control'] = 'private, no-store'
+    # Browsers refuse to render a framed PDF whose headers forbid framing, so
+    # this response explicitly allows only our own origin to frame it.
+    response['X-Frame-Options'] = 'SAMEORIGIN'
     return response
 
 
@@ -813,3 +833,224 @@ def toggle_pin(request, kind, entry_id):
         entry.save(update_fields=['is_pinned', 'updated_at'])
         messages.success(request, 'Pinned.' if entry.is_pinned else 'Unpinned.')
     return redirect('dashboard:entry_detail', kind=kind, entry_id=entry.pk)
+
+
+# ---------------------------------------------------------------------------
+# Study notebooks (Library). Each notebook holds many pages, so a class note
+# can be revised, edited, and read back at any time.
+# ---------------------------------------------------------------------------
+
+def _owned_notebook(request, notebook_id):
+    return get_object_or_404(DashboardNotebook, user=request.user, pk=notebook_id)
+
+
+def _owned_study_note(request, notebook, note_id):
+    return get_object_or_404(StudyNote, notebook=notebook, pk=note_id)
+
+
+@login_required
+def notebook_list(request):
+    query = request.GET.get('q', '').strip()
+    notebooks = DashboardNotebook.objects.filter(user=request.user)
+    if query:
+        notebooks = notebooks.filter(
+            Q(title__icontains=query)
+            | Q(subject__icontains=query)
+            | Q(course_code__icontains=query)
+            | Q(lecturer__icontains=query)
+            | Q(notes__title__icontains=query)
+            | Q(notes__body__icontains=query)
+        ).distinct()
+
+    books = []
+    for notebook in notebooks:
+        note_count = notebook.notes.count()
+        books.append({
+            'notebook': notebook,
+            'note_count': note_count,
+            'recent': notebook.notes.all()[:3],
+            'pinned_count': notebook.notes.filter(is_pinned=True).count(),
+        })
+
+    recent_notes = StudyNote.objects.filter(notebook__user=request.user).select_related('notebook')[:6]
+    return render(
+        request,
+        'dashboard/notebooks.html',
+        {
+            'books': books,
+            'query': query,
+            'recent_notes': recent_notes,
+            'notebook_total': notebooks.count(),
+            'note_total': StudyNote.objects.filter(notebook__user=request.user).count(),
+            'page_title': 'Study notebook',
+        },
+    )
+
+
+@login_required
+def add_notebook(request):
+    if request.method == 'POST':
+        form = NotebookForm(request.POST)
+        if form.is_valid():
+            notebook = form.save(commit=False)
+            notebook.user = request.user
+            notebook.save()
+            messages.success(request, f'Notebook "{notebook.title}" created.')
+            return redirect('dashboard:notebook_detail', notebook_id=notebook.pk)
+    else:
+        form = NotebookForm()
+    return render(
+        request,
+        'dashboard/notebook_form.html',
+        {'form': form, 'page_title': 'New notebook', 'heading': 'Create a study notebook', 'is_edit': False},
+    )
+
+
+@login_required
+def notebook_detail(request, notebook_id):
+    notebook = _owned_notebook(request, notebook_id)
+    notes = notebook.notes.all()
+    query = request.GET.get('q', '').strip()
+    if query:
+        notes = notes.filter(Q(title__icontains=query) | Q(body__icontains=query))
+    return render(
+        request,
+        'dashboard/notebook_detail.html',
+        {
+            'notebook': notebook,
+            'notes': notes,
+            'query': query,
+            'note_count': notebook.notes.count(),
+        },
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def edit_notebook(request, notebook_id):
+    notebook = _owned_notebook(request, notebook_id)
+    if request.method == 'POST':
+        form = NotebookForm(request.POST, instance=notebook)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Notebook updated.')
+            return redirect('dashboard:notebook_detail', notebook_id=notebook.pk)
+    else:
+        form = NotebookForm(instance=notebook)
+    return render(
+        request,
+        'dashboard/notebook_form.html',
+        {'form': form, 'notebook': notebook, 'page_title': 'Edit notebook',
+         'heading': 'Edit notebook', 'is_edit': True},
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def delete_notebook(request, notebook_id):
+    notebook = _owned_notebook(request, notebook_id)
+    if request.method == 'POST':
+        title = notebook.title
+        notebook.delete()
+        messages.success(request, f'Notebook "{title}" deleted.')
+        return redirect('dashboard:notebooks')
+    return render(
+        request,
+        'dashboard/notebook_confirm_delete.html',
+        {'notebook': notebook},
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def toggle_notebook_pin(request, notebook_id):
+    notebook = _owned_notebook(request, notebook_id)
+    if request.method == 'POST':
+        notebook.is_pinned = not notebook.is_pinned
+        notebook.save(update_fields=['is_pinned', 'updated_at'])
+    return redirect('dashboard:notebook_detail', notebook_id=notebook.pk)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def add_study_note(request, notebook_id):
+    notebook = _owned_notebook(request, notebook_id)
+    if request.method == 'POST':
+        form = StudyNoteForm(request.POST)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.notebook = notebook
+            note.save()
+            notebook.save(update_fields=['updated_at'])
+            messages.success(request, f'"{note.title}" saved to {notebook.title}.')
+            return redirect('dashboard:study_note_detail', notebook_id=notebook.pk, note_id=note.pk)
+    else:
+        form = StudyNoteForm()
+    return render(
+        request,
+        'dashboard/study_note_form.html',
+        {'form': form, 'notebook': notebook, 'is_edit': False, 'page_title': 'New page'},
+    )
+
+
+@login_required
+def study_note_detail(request, notebook_id, note_id):
+    notebook = _owned_notebook(request, notebook_id)
+    note = _owned_study_note(request, notebook, note_id)
+    return render(
+        request,
+        'dashboard/study_note_detail.html',
+        {
+            'notebook': notebook,
+            'note': note,
+            'siblings': notebook.notes.exclude(pk=note.pk)[:8],
+        },
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def edit_study_note(request, notebook_id, note_id):
+    notebook = _owned_notebook(request, notebook_id)
+    note = _owned_study_note(request, notebook, note_id)
+    if request.method == 'POST':
+        form = StudyNoteForm(request.POST, instance=note)
+        if form.is_valid():
+            form.save()
+            notebook.save(update_fields=['updated_at'])
+            messages.success(request, 'Page updated.')
+            return redirect('dashboard:study_note_detail', notebook_id=notebook.pk, note_id=note.pk)
+    else:
+        form = StudyNoteForm(instance=note)
+    return render(
+        request,
+        'dashboard/study_note_form.html',
+        {'form': form, 'notebook': notebook, 'note': note, 'is_edit': True, 'page_title': 'Edit page'},
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def delete_study_note(request, notebook_id, note_id):
+    notebook = _owned_notebook(request, notebook_id)
+    note = _owned_study_note(request, notebook, note_id)
+    if request.method == 'POST':
+        note.delete()
+        messages.success(request, 'Page deleted.')
+        return redirect('dashboard:notebook_detail', notebook_id=notebook.pk)
+    return render(
+        request,
+        'dashboard/study_note_confirm_delete.html',
+        {'notebook': notebook, 'note': note},
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def toggle_study_note_pin(request, notebook_id, note_id):
+    notebook = _owned_notebook(request, notebook_id)
+    note = _owned_study_note(request, notebook, note_id)
+    if request.method == 'POST':
+        note.is_pinned = not note.is_pinned
+        note.save(update_fields=['is_pinned', 'updated_at'])
+    return redirect('dashboard:study_note_detail', notebook_id=notebook.pk, note_id=note.pk)

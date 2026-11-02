@@ -160,6 +160,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: roun
 .icon-coral { background: #eff6ff; color: #1d4ed8; }
 .icon-blue { background: #eff6ff; color: #1d4ed8; }
 .icon-lime { background: #ecfdf5; color: #059669; }
+.icon-violet { background: #ecfeff; color: #0e7490; }
 .chapter-copy { display: grid; gap: 4px; }
 .chapter-copy strong { color: #2a3a34; font-size: 12px; font-weight: 600; }
 .chapter-copy small { color: #53637f; font-size: 11px; }

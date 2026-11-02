@@ -750,3 +750,166 @@ class ProjectsWorkspaceTests(TestCase):
         self.assertEqual(note.role, '')
         self.assertEqual(note.tech_stack, '')
         self.assertEqual(note.priority, '')
+
+
+class SavedRecordOpenTests(TestCase):
+    """Saved notes, meeting notes, and uploaded PDFs must open and be readable."""
+
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username='opener', password='a-strong-test-password')
+        self.other_user = user_model.objects.create_user(username='opener-other', password='a-strong-test-password')
+        self.client.force_login(self.user)
+        self.media_dir = TemporaryDirectory()
+        media_settings = override_settings(MEDIA_ROOT=self.media_dir.name)
+        media_settings.enable()
+        self.addCleanup(self.media_dir.cleanup)
+        self.addCleanup(media_settings.disable)
+
+    def test_saved_note_opens_and_shows_its_text(self):
+        DashboardEntry.objects.create(
+            user=self.user,
+            kind=DashboardEntry.Kind.NOTE,
+            title='Lecture recap',
+            description='Line one\nLine two',
+        )
+        response = self.client.get(reverse('dashboard:entries_by_kind', kwargs={'kind': 'note'}))
+        self.assertContains(response, 'Lecture recap')
+
+        entry = DashboardEntry.objects.get(title='Lecture recap')
+        detail = self.client.get(
+            reverse('dashboard:entry_detail', kwargs={'kind': 'note', 'entry_id': entry.pk})
+        )
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, 'Line one')
+        self.assertContains(detail, 'detail-copy-reading')
+
+    def test_meeting_note_saves_and_opens(self):
+        response = self.client.post(
+            reverse('dashboard:add_entry', kwargs={'kind': DashboardEntry.Kind.MEETING}),
+            {'title': 'Team sync', 'description': 'Decisions: ship on Friday.'},
+        )
+        self.assertRedirects(response, reverse('dashboard:index'))
+        entry = DashboardEntry.objects.get(title='Team sync')
+        detail = self.client.get(
+            reverse('dashboard:entry_detail', kwargs={'kind': 'meeting', 'entry_id': entry.pk})
+        )
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, 'Decisions: ship on Friday.')
+
+    def test_meeting_notes_are_private_to_the_owner(self):
+        DashboardEntry.objects.create(user=self.other_user, kind=DashboardEntry.Kind.MEETING, title='Someone else meeting')
+        response = self.client.get(reverse('dashboard:entries_by_kind', kwargs={'kind': 'meeting'}))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Someone else meeting')
+
+    def test_pdf_preview_is_inline_and_framable_by_this_origin(self):
+        uploaded = SimpleUploadedFile('slides.pdf', b'%PDF-1.7\npreview me', content_type='application/pdf')
+        upload = PrivatePDFUpload.objects.create(
+            user=self.user,
+            original_filename='slides.pdf',
+            title='Slides',
+            file=uploaded,
+            file_size=uploaded.size,
+        )
+
+        response = self.client.get(reverse('dashboard:preview_file', kwargs={'upload_id': upload.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertTrue(response['Content-Disposition'].startswith('inline'))
+        self.assertEqual(response['X-Frame-Options'], 'SAMEORIGIN')
+        self.assertEqual(b''.join(response.streaming_content), b'%PDF-1.7\npreview me')
+        response.close()
+
+        detail = self.client.get(reverse('dashboard:resource_detail', kwargs={'upload_id': upload.pk}))
+        self.assertContains(detail, reverse('dashboard:preview_file', kwargs={'upload_id': upload.pk}))
+
+
+class StudyNotebookTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(username='student', password='a-strong-test-password')
+        self.other_user = user_model.objects.create_user(username='student-other', password='a-strong-test-password')
+        self.client.force_login(self.user)
+
+    def make_notebook(self, **overrides):
+        from .models import DashboardNotebook
+
+        data = {'user': self.user, 'title': 'Organic Chemistry', 'subject': 'Chemistry', 'course_code': 'CHEM 201'}
+        data.update(overrides)
+        return DashboardNotebook.objects.create(**data)
+
+    def test_notebook_shelf_renders_and_is_reachable_from_library(self):
+        self.make_notebook()
+        shelf = self.client.get(reverse('dashboard:notebooks'))
+        self.assertEqual(shelf.status_code, 200)
+        self.assertContains(shelf, 'Organic Chemistry')
+
+        library = self.client.get(reverse('dashboard:library'))
+        self.assertContains(library, reverse('dashboard:notebooks'))
+
+    def test_create_notebook_and_write_a_page_that_can_be_read_back(self):
+        created = self.client.post(
+            reverse('dashboard:add_notebook'),
+            {'title': 'Data Structures', 'subject': 'Computer Science', 'course_code': 'CS 210', 'lecturer': 'Dr. A', 'color': 'lime'},
+        )
+        from .models import DashboardNotebook
+
+        notebook = DashboardNotebook.objects.get(title='Data Structures')
+        self.assertRedirects(created, reverse('dashboard:notebook_detail', kwargs={'notebook_id': notebook.pk}))
+
+        saved = self.client.post(
+            reverse('dashboard:add_study_note', kwargs={'notebook_id': notebook.pk}),
+            {'title': 'Binary trees', 'body': 'Nodes, edges, traversals.'},
+        )
+        page = notebook.notes.get(title='Binary trees')
+        self.assertRedirects(
+            saved,
+            reverse('dashboard:study_note_detail', kwargs={'notebook_id': notebook.pk, 'note_id': page.pk}),
+        )
+
+        reading = self.client.get(
+            reverse('dashboard:study_note_detail', kwargs={'notebook_id': notebook.pk, 'note_id': page.pk})
+        )
+        self.assertEqual(reading.status_code, 200)
+        self.assertContains(reading, 'Nodes, edges, traversals.')
+        self.assertContains(reading, 'Binary trees')
+
+    def test_page_can_be_edited_and_pinned(self):
+        notebook = self.make_notebook()
+        page = notebook.notes.create(title='Draft', body='old text')
+
+        self.client.post(
+            reverse('dashboard:edit_study_note', kwargs={'notebook_id': notebook.pk, 'note_id': page.pk}),
+            {'title': 'Final', 'body': 'new text'},
+        )
+        page.refresh_from_db()
+        self.assertEqual(page.title, 'Final')
+        self.assertEqual(page.body, 'new text')
+
+        self.client.post(reverse('dashboard:toggle_study_note_pin', kwargs={'notebook_id': notebook.pk, 'note_id': page.pk}))
+        page.refresh_from_db()
+        self.assertTrue(page.is_pinned)
+
+    def test_notebooks_and_pages_are_private_to_the_owner(self):
+        notebook = self.make_notebook(user=self.other_user)
+        page = notebook.notes.create(title='Private page')
+
+        self.assertEqual(self.client.get(reverse('dashboard:notebook_detail', kwargs={'notebook_id': notebook.pk})).status_code, 404)
+        self.assertEqual(
+            self.client.get(
+                reverse('dashboard:study_note_detail', kwargs={'notebook_id': notebook.pk, 'note_id': page.pk})
+            ).status_code,
+            404,
+        )
+        self.assertEqual(self.client.post(reverse('dashboard:delete_notebook', kwargs={'notebook_id': notebook.pk})).status_code, 404)
+
+    def test_deleting_a_notebook_removes_its_pages(self):
+        notebook = self.make_notebook()
+        notebook.notes.create(title='Page one')
+        self.client.post(reverse('dashboard:delete_notebook', kwargs={'notebook_id': notebook.pk}))
+        from .models import DashboardNotebook, StudyNote
+
+        self.assertFalse(DashboardNotebook.objects.filter(pk=notebook.pk).exists())
+        self.assertFalse(StudyNote.objects.exists())

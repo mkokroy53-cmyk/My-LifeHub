@@ -201,7 +201,9 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+# PDF previews are framed by our own pages. Only this origin may frame us;
+# the preview response additionally narrows that to its own URL (see views).
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
