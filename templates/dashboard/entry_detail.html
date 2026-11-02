@@ -28,10 +28,14 @@
     </div>
     {% endif %}
 
-    {% if entry.description %}
+    {% if entry.description or entry.kind == 'note' or entry.kind == 'meeting' %}
         <div class="detail-copy{% if entry.kind == 'note' or entry.kind == 'meeting' %} detail-copy-reading{% endif %}">
-            <h2>{% if entry.kind == 'diary' %}Entry{% elif entry.kind == 'project' %}Overview{% elif entry.kind == 'meeting' %}Meeting notes{% else %}Details{% endif %}</h2>
-            <p>{{ entry.description|linebreaksbr }}</p>
+            <h2>{% if entry.kind == 'diary' %}Entry{% elif entry.kind == 'project' %}Overview{% elif entry.kind == 'meeting' %}Meeting notes{% elif entry.kind == 'note' %}Note{% else %}Details{% endif %}</h2>
+            {% if entry.description %}
+                <p>{{ entry.description|linebreaksbr }}</p>
+            {% else %}
+                <p class="empty-note-message">No note content has been saved yet. Choose Edit record to add it.</p>
+            {% endif %}
         </div>
     {% endif %}
 

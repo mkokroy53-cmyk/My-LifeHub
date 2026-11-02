@@ -782,7 +782,35 @@ class SavedRecordOpenTests(TestCase):
         )
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, 'Line one')
+        self.assertContains(detail, '<h2>Note</h2>', html=True)
         self.assertContains(detail, 'detail-copy-reading')
+
+    def test_note_content_saved_from_form_is_shown_when_opened(self):
+        response = self.client.post(
+            reverse('dashboard:add_entry', kwargs={'kind': DashboardEntry.Kind.NOTE}),
+            {'title': 'Comp 305 oop', 'description': 'Classes and objects'},
+        )
+        self.assertRedirects(response, reverse('dashboard:index'))
+
+        entry = DashboardEntry.objects.get(title='Comp 305 oop')
+        detail = self.client.get(
+            reverse('dashboard:entry_detail', kwargs={'kind': entry.kind, 'entry_id': entry.pk})
+        )
+        self.assertContains(detail, 'Classes and objects')
+
+    def test_empty_note_detail_explains_how_to_add_content(self):
+        entry = DashboardEntry.objects.create(
+            user=self.user,
+            kind=DashboardEntry.Kind.NOTE,
+            title='Empty note',
+        )
+
+        detail = self.client.get(
+            reverse('dashboard:entry_detail', kwargs={'kind': entry.kind, 'entry_id': entry.pk})
+        )
+
+        self.assertContains(detail, '<h2>Note</h2>', html=True)
+        self.assertContains(detail, 'No note content has been saved yet.')
 
     def test_meeting_note_saves_and_opens(self):
         response = self.client.post(
