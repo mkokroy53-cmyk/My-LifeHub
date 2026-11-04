@@ -30,6 +30,7 @@
     class="app-page portfolio-page"
     data-portfolio-login="{{ open_login|yesno:'1,0' }}"
   >
+    <div class="scroll-progress" data-scroll-progress aria-hidden="true"></div>
     <!-- ============ PUBLIC TOP BAR ============ -->
     <header class="pf-topbar">
       <a
@@ -167,7 +168,6 @@
               height="360"
               loading="eager"
             />
-            <span class="pf-portrait-ring" aria-hidden="true"></span>
             <span class="pf-portrait-badge pf-badge-top" aria-hidden="true"
               >✦</span
             >
@@ -583,6 +583,9 @@
         Sign in</button
       >{% endif %}
     </footer>
+    <button class="scroll-top pf-scroll-top" type="button" data-scroll-top aria-label="Back to top" title="Back to top">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6M12 8v12" /></svg>
+    </button>
 
     {% if not user.is_authenticated %}
     <!-- ============ SIGN-IN OVERLAY ============ -->

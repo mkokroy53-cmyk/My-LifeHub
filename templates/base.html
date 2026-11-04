@@ -17,6 +17,7 @@
     <script src="{% static 'js/app.js' %}" defer></script>
 </head>
 <body class="{% if user.is_authenticated %}app-page{% else %}auth-page{% endif %}">
+<div class="scroll-progress" data-scroll-progress aria-hidden="true"></div>
 {% if user.is_authenticated %}
     <div class="app-shell">
         <main class="main-area">

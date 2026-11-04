@@ -7,6 +7,9 @@ const navigationTitle = immersiveNavigation?.querySelector('[data-nav-title]');
 const navigationSections = immersiveNavigation?.querySelectorAll('[data-nav-section]') ?? [];
 const themeToggles = document.querySelectorAll('[data-theme-toggle]');
 const scrollTopButton = document.querySelector('[data-scroll-top]');
+const scrollProgress = document.querySelector('[data-scroll-progress]');
+const portfolioSections = [...document.querySelectorAll('.portfolio-page .pf-section[id]')];
+const portfolioNavLinks = [...document.querySelectorAll('.portfolio-page .pf-nav a[href^="#"]')];
 
 document.body.classList.add('motion-ready');
 
@@ -231,9 +234,38 @@ document.querySelectorAll('form[method="post"] button[type="submit"]').forEach((
 
 function updateScrollTopVisibility() {
     scrollTopButton?.classList.toggle('is-visible', window.scrollY > 480);
+    const scrollableDistance = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = scrollableDistance > 0 ? Math.min(window.scrollY / scrollableDistance, 1) : 0;
+    scrollProgress?.style.setProperty('--scroll-progress', String(progress));
+
+    if (portfolioSections.length && portfolioNavLinks.length) {
+        const headerOffset = document.querySelector('.pf-topbar')?.getBoundingClientRect().height ?? 0;
+        const activeSection = portfolioSections.reduce((active, section) => {
+            return section.getBoundingClientRect().top <= headerOffset + 120 ? section : active;
+        }, null);
+        portfolioNavLinks.forEach((link) => {
+            const isActive = link.hash === (activeSection ? `#${activeSection.id}` : '');
+            if (isActive) {
+                link.classList.add('is-active');
+                link.setAttribute('aria-current', 'location');
+            } else {
+                link.classList.remove('is-active');
+                link.removeAttribute('aria-current');
+            }
+        });
+    }
 }
 
-window.addEventListener('scroll', updateScrollTopVisibility, { passive: true });
+let scrollUpdatePending = false;
+window.addEventListener('scroll', () => {
+    if (scrollUpdatePending) return;
+    scrollUpdatePending = true;
+    window.requestAnimationFrame(() => {
+        updateScrollTopVisibility();
+        scrollUpdatePending = false;
+    });
+}, { passive: true });
+window.addEventListener('resize', updateScrollTopVisibility, { passive: true });
 updateScrollTopVisibility();
 scrollTopButton?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' }));
 

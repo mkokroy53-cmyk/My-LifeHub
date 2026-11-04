@@ -21,6 +21,9 @@ class DashboardAccessTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'dashboard/portfolio.html')
         self.assertContains(response, 'data-login-overlay')
+        self.assertContains(response, 'data-scroll-progress')
+        self.assertContains(response, 'data-scroll-top')
+        self.assertNotContains(response, 'pf-portrait-ring')
         self.assertContains(response, 'Graphic Design')
         self.assertContains(response, 'Church flyers')
         self.assertContains(response, 'img/portfolio.jpeg')
@@ -67,6 +70,7 @@ class DashboardAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'dashboard/index.html')
+        self.assertContains(response, 'data-scroll-progress', count=1)
         self.assertContains(response, 'data-immersive-navigation')
         self.assertContains(response, 'data-nav-section="Learning"')
         self.assertContains(response, 'data-nav-section="Diary"')
