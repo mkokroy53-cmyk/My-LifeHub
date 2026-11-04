@@ -21,6 +21,13 @@ class DashboardAccessTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'dashboard/portfolio.html')
         self.assertContains(response, 'data-login-overlay')
+        self.assertContains(response, 'Graphic Design')
+        self.assertContains(response, 'Church flyers')
+        self.assertContains(response, 'img/portfolio.jpeg')
+        self.assertContains(response, 'img/portfolio-gallery/church-worship-flyer.jpeg')
+        self.assertContains(response, 'https://mkokroy53-cmyk.github.io/system/')
+        self.assertContains(response, 'https://mkokroy53-cmyk.github.io/gift/')
+        self.assertContains(response, 'https://mkokroy53-cmyk.github.io/port/')
 
     def test_private_pages_bounce_anonymous_users_back_to_portfolio_login(self):
         """A signed-out visitor lands on the portfolio with the login modal primed."""
