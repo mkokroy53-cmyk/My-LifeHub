@@ -64,6 +64,17 @@ The dashboard captures now have dedicated private archive modules, full record e
 - **Meeting notes** (Life archive): a separate record type for meetings, so meeting notes never mix with study pages. They are written, saved, listed, and read back like any other archive record.
 - Notes and meeting notes can now be pinned (previously pinning was only available for diary entries).
 
+## Phase 9 immersive portfolio motion
+
+- The public portfolio gains a scroll-driven layer (`static/css/portfolio-motion.css` and the scroll engine in `static/js/app.js`), built on the existing `--pf-*` design tokens rather than replacing them.
+- Staged reveals: headings rise, cards zoom, and the hero columns slide in from their own side, each with a staggered delay so nothing appears all at once.
+- Layered parallax with an ambient light that drifts with the page, plus a cinematic hero hand-off as the reader scrolls away.
+- Scroll-driven transforms: the portrait tilts and catches a light sweep, gallery cards lift and straighten, and the hero orbs drift at different rates.
+- Section scene changes: each section fades in its own glow and draws its seam as it enters the viewport.
+- Interactive polish: pointer-tracked light on cards, animated nav underlines, and restrained hover lifts.
+- Performance: one `requestAnimationFrame` loop for all scroll effects, passive listeners, and depth effects disabled on small screens.
+- Reduced motion is fully respected — the reveal system never arms, and all scroll transforms are switched off.
+
 ## Technology
 
 - Python 3.13 (Python 3.11 or later recommended)

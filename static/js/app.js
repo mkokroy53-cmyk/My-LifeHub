@@ -10,6 +10,15 @@ const scrollTopButton = document.querySelector('[data-scroll-top]');
 const scrollProgress = document.querySelector('[data-scroll-progress]');
 const portfolioSections = [...document.querySelectorAll('.portfolio-page .pf-section[id]')];
 const portfolioNavLinks = [...document.querySelectorAll('.portfolio-page .pf-nav a[href^="#"]')];
+const parallaxTargets = [...document.querySelectorAll('[data-parallax]')].map((element) => {
+    const bounds = element.getBoundingClientRect();
+    return {
+        element,
+        startCenter: bounds.top + bounds.height / 2,
+        strength: Number(element.dataset.parallax),
+    };
+});
+const appShell = document.querySelector('.app-shell');
 
 document.body.classList.add('motion-ready');
 
@@ -157,7 +166,6 @@ const revealTargets = document.querySelectorAll(
 
 revealTargets.forEach((element, index) => {
     element.dataset.reveal = '';
-    element.dataset.scrollMotion = '';
     element.style.setProperty('--reveal-delay', `${Math.min(index % 5, 4) * 55}ms`);
 });
 
@@ -167,9 +175,11 @@ if (prefersReducedMotion || !('IntersectionObserver' in window)) {
 } else {
     const revealObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-            entry.target.classList.toggle('is-visible', entry.isIntersecting);
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            revealObserver.unobserve(entry.target);
         });
-    }, { threshold: 0.08, rootMargin: '40px 0px 40px 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
     revealTargets.forEach((element) => revealObserver.observe(element));
 }
 
@@ -264,12 +274,17 @@ function updateScrollTopVisibility() {
 
 function updateScrollMotion() {
     if (prefersReducedMotion) return;
-    const shifts = [...document.querySelectorAll('[data-scroll-motion]')].map((element) => {
+    parallaxTargets.forEach(({ element, startCenter, strength }) => {
         const bounds = element.getBoundingClientRect();
-        const relativeCenter = (bounds.top + bounds.height / 2) / window.innerHeight;
-        return [element, Math.max(-8, Math.min(8, (0.5 - relativeCenter) * 16))];
+        const currentCenter = bounds.top + bounds.height / 2;
+        const offset = Math.max(-32, Math.min(32, (startCenter - currentCenter) * strength));
+        element.style.setProperty('--parallax-offset', `${offset.toFixed(2)}px`);
     });
-    shifts.forEach(([element, shift]) => element.style.setProperty('--scroll-shift', `${shift.toFixed(2)}px`));
+
+    if (appShell) {
+        const ambientOffset = Math.min(window.scrollY * 0.035, 54);
+        appShell.style.setProperty('--ambient-offset', `${ambientOffset.toFixed(2)}px`);
+    }
 }
 
 let scrollUpdatePending = false;
@@ -592,6 +607,8 @@ document.querySelectorAll('[data-quote-shuffle]').forEach((button) => {
 (() => {
     const revealItems = document.querySelectorAll([
         '.portfolio-page .pf-section-head',
+        '.portfolio-page .pf-hero-copy',
+        '.portfolio-page .pf-hero-portrait',
         '.portfolio-page .pf-about-grid',
         '.portfolio-page .pf-focus-tag',
         '.portfolio-page .pf-skill-card',
@@ -610,17 +627,149 @@ document.querySelectorAll('[data-quote-shuffle]').forEach((button) => {
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-            entry.target.classList.toggle('is-visible', entry.isIntersecting);
+            if (!entry.isIntersecting) return;
+            reveal(entry.target);
+            observer.unobserve(entry.target);
         });
-    }, { threshold: 0.12, rootMargin: '40px 0px 40px 0px' });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+    // Each element gets the motion that suits its role: headings rise, cards
+    // zoom, and paired columns slide in from their own side.
+    const variantFor = (item) => {
+        if (item.matches('.pf-section-head, .pf-about-lede, .pf-about-body, .pf-design-showcase-head')) return 'pf-reveal-rise';
+        if (item.matches('.pf-skill-card, .pf-work-card, .pf-design-card, .pf-contact-card')) return 'pf-reveal-zoom';
+        if (item.matches('.pf-hero-copy')) return 'pf-reveal-left';
+        if (item.matches('.pf-hero-portrait')) return 'pf-reveal-right';
+        return '';
+    };
 
     revealItems.forEach((item) => {
         item.classList.add('pf-scroll-item');
-        item.dataset.scrollMotion = '';
+        const variant = variantFor(item);
+        if (variant) item.classList.add(variant);
         const siblingIndex = Array.prototype.indexOf.call(item.parentElement.children, item);
         item.style.setProperty('--pf-reveal-delay', `${Math.min(siblingIndex, 5) * 75}ms`);
         if (item.getBoundingClientRect().top < window.innerHeight) reveal(item);
         observer.observe(item);
     });
     updateScrollMotion();
+})();
+
+/* =====================================================================
+   PORTFOLIO — IMMERSIVE SCROLL ENGINE
+   One rAF loop drives every scroll-linked effect on the public page:
+   layered parallax, scroll-driven transforms, the hero hand-off and the
+   section scene changes. Everything is measured once per frame from
+   getBoundingClientRect, so nothing depends on cached offsets going stale
+   after a resize or a font swap.
+
+   The whole module is inert unless the page is the portfolio, and it
+   bails out entirely when the visitor prefers reduced motion.
+   ===================================================================== */
+(() => {
+    const page = document.querySelector('.portfolio-page');
+    if (!page) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+
+    const hero = page.querySelector('.pf-hero');
+    const sections = [...page.querySelectorAll('.pf-section')];
+    const rotateTargets = [...page.querySelectorAll('[data-scroll-rotate]')];
+    const zoomTargets = [...page.querySelectorAll('[data-scroll-zoom]')];
+    const driftTargets = [...page.querySelectorAll('[data-scroll-drift]')];
+    const portrait = page.querySelector('.pf-portrait-frame');
+    const designCards = [...page.querySelectorAll('.pf-design-card')];
+    const parallaxLayers = [...page.querySelectorAll('[data-parallax]')].map((element) => ({
+        element,
+        strength: Number(element.dataset.parallax) || 0,
+    }));
+
+    // How far an element has travelled through the viewport: 0 when its top
+    // edge is at the bottom of the screen, 1 when its bottom edge has left.
+    const progressOf = (element) => {
+        const rect = element.getBoundingClientRect();
+        const span = window.innerHeight + rect.height;
+        if (span <= 0) return 0;
+        return Math.min(1, Math.max(0, (window.innerHeight - rect.top) / span));
+    };
+
+    // -1 → +1 as the element crosses the middle of the screen.
+    const centredOf = (element) => progressOf(element) * 2 - 1;
+
+    let frame = 0;
+    const render = () => {
+        frame = 0;
+        const viewport = window.innerHeight;
+
+        // Hero hand-off: fully present at the top, receding as it leaves.
+        if (hero) {
+            const travelled = Math.min(1, Math.max(0, window.scrollY / Math.max(hero.offsetHeight * 0.9, 1)));
+            page.style.setProperty('--pf-hero-fade', travelled.toFixed(3));
+        }
+
+        // Layered parallax. Each layer moves at its own rate, and the three
+        // depth variables feed the ambient light so it drifts with the page.
+        parallaxLayers.forEach(({ element, strength }) => {
+            const offset = Math.max(-70, Math.min(70, -centredOf(element) * strength * 120));
+            element.style.setProperty('--parallax-offset', `${offset.toFixed(2)}px`);
+        });
+        page.style.setProperty('--pf-depth-1', `${(window.scrollY * 0.06).toFixed(1)}px`);
+        page.style.setProperty('--pf-depth-2', `${(window.scrollY * 0.12).toFixed(1)}px`);
+
+        // Scroll-driven transforms.
+        rotateTargets.forEach((element) => {
+            const amount = Number(element.dataset.scrollRotate) || 0;
+            element.style.setProperty('--scroll-rotate', (centredOf(element) * amount).toFixed(2));
+        });
+        zoomTargets.forEach((element) => {
+            const amount = Number(element.dataset.scrollZoom) || 0;
+            element.style.setProperty('--scroll-zoom', (centredOf(element) * amount).toFixed(3));
+        });
+        driftTargets.forEach((element) => {
+            const amount = Number(element.dataset.scrollDrift) || 0;
+            element.style.setProperty('--scroll-drift', (centredOf(element) * amount).toFixed(1));
+        });
+
+        if (portrait) {
+            const tilt = centredOf(portrait);
+            portrait.style.setProperty('--scroll-tilt', (tilt * 4).toFixed(2));
+            portrait.style.setProperty('--scroll-sheen', ((tilt + 1) / 2).toFixed(3));
+        }
+
+        // Gallery cards lift and straighten as they approach the centre.
+        designCards.forEach((card) => {
+            const centred = centredOf(card);
+            card.style.setProperty('--card-lift', (Math.abs(centred) * 14).toFixed(1));
+            card.style.setProperty('--card-tilt', (centred * 1.6).toFixed(2));
+        });
+
+        // Section scene changes: a section is "in view" while it occupies the
+        // middle band of the screen, which drives its glow and seam.
+        sections.forEach((section) => {
+            const rect = section.getBoundingClientRect();
+            const inView = rect.top < viewport * 0.82 && rect.bottom > viewport * 0.18;
+            section.classList.toggle('is-in-view', inView);
+        });
+    };
+
+    const schedule = () => {
+        if (frame) return;
+        frame = window.requestAnimationFrame(render);
+    };
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('load', schedule);
+    render();
+
+    // Pointer-tracked light on cards. Cheap: one listener per card, and the
+    // values are only written while the pointer is actually over it.
+    page.querySelectorAll('.pf-skill-card, .pf-work-card').forEach((card) => {
+        card.addEventListener('pointermove', (event) => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty('--pointer-x', `${event.clientX - rect.left}px`);
+            card.style.setProperty('--pointer-y', `${event.clientY - rect.top}px`);
+        }, { passive: true });
+    });
 })();

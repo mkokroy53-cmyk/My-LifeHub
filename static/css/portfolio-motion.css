@@ -1,0 +1,210 @@
+/* ==========================================================================
+   PORTFOLIO — IMMERSIVE SCROLL LAYER
+   Extends the existing portfolio design system (app.css) with depth, staged
+   reveals, scroll-driven transforms and section transitions. Every effect is
+   additive: with JavaScript off, or with reduced motion requested, the page
+   renders exactly as it did before.
+   ========================================================================== */
+
+/* ---------- 1. Depth: layered parallax + ambient light ------------------- */
+.portfolio-page {
+  --pf-depth-1: 0px;
+  --pf-depth-2: 0px;
+  --pf-depth-3: 0px;
+  --pf-hero-fade: 0;
+}
+
+/* A soft light that follows the scroll position, giving the page a sense of
+   travelling through space rather than sliding a flat sheet. */
+.portfolio-page .pf-main::before {
+  position: fixed; z-index: 0; inset: 0;
+  background:
+    radial-gradient(ellipse 60vw 40vw at 50% calc(18% + var(--pf-depth-2)), rgb(45 212 160 / .10), transparent 70%),
+    radial-gradient(ellipse 50vw 36vw at 82% calc(70% - var(--pf-depth-1)), rgb(56 189 248 / .10), transparent 72%);
+  content: ""; pointer-events: none;
+  transition: opacity .4s ease;
+}
+.portfolio-page .pf-main > * { position: relative; z-index: 1; }
+
+/* Hero recedes as the reader leaves it — a cinematic hand-off to the content. */
+.portfolio-page .pf-hero {
+  opacity: calc(1 - var(--pf-hero-fade) * .55);
+  transform: translate3d(0, calc(var(--pf-hero-fade) * -34px), 0) scale(calc(1 - var(--pf-hero-fade) * .035));
+  transform-origin: 50% 0;
+  will-change: transform, opacity;
+}
+
+/* ---------- 2. Staged reveals ------------------------------------------- */
+/* Variants are opt-in per element so the motion suits the content. */
+.pf-reveal-ready .pf-scroll-item {
+  --pf-reveal-offset: 30px;
+  --pf-reveal-scale: .96;
+  --pf-reveal-blur: 5px;
+  opacity: 0;
+  translate: 0 var(--pf-reveal-offset);
+  scale: var(--pf-reveal-scale);
+  filter: blur(var(--pf-reveal-blur));
+  transition:
+    opacity .7s cubic-bezier(.2,.75,.25,1) var(--pf-reveal-delay, 0ms),
+    translate .7s cubic-bezier(.2,.75,.25,1) var(--pf-reveal-delay, 0ms),
+    scale .7s cubic-bezier(.2,.75,.25,1) var(--pf-reveal-delay, 0ms),
+    filter .7s ease var(--pf-reveal-delay, 0ms);
+}
+.pf-reveal-ready .pf-scroll-item.is-visible {
+  --pf-reveal-offset: 0px; --pf-reveal-scale: 1; --pf-reveal-blur: 0px;
+  opacity: 1;
+}
+
+/* Rise: headings and copy travel further, for a calmer, editorial feel. */
+.pf-reveal-ready .pf-reveal-rise { --pf-reveal-offset: 46px; --pf-reveal-scale: 1; --pf-reveal-blur: 0px; }
+/* Zoom: cards and imagery settle in from slightly larger. */
+.pf-reveal-ready .pf-reveal-zoom { --pf-reveal-offset: 18px; --pf-reveal-scale: .92; --pf-reveal-blur: 0px; }
+/* Slide: side entries for paired columns. */
+.pf-reveal-ready .pf-reveal-left { --pf-reveal-offset: 0px; --pf-reveal-scale: 1; --pf-reveal-blur: 0px; translate: -34px 0; }
+.pf-reveal-ready .pf-reveal-left.is-visible { translate: 0 0; }
+.pf-reveal-ready .pf-reveal-right { --pf-reveal-offset: 0px; --pf-reveal-scale: 1; --pf-reveal-blur: 0px; translate: 34px 0; }
+.pf-reveal-ready .pf-reveal-right.is-visible { translate: 0 0; }
+
+/* A hairline that draws itself across each section boundary. */
+.pf-reveal-ready .pf-section::before {
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform 1.1s cubic-bezier(.2,.75,.25,1);
+}
+.pf-reveal-ready .pf-section.is-in-view::before { transform: scaleX(1); }
+
+/* ---------- 3. Scroll-driven transforms --------------------------------- */
+/* Elements marked data-scroll-rotate / -zoom / -drift respond to how far
+   they have travelled through the viewport. Values are set by app.js. */
+.portfolio-page [data-scroll-rotate] {
+  rotate: calc(var(--scroll-rotate, 0) * 1deg);
+  will-change: rotate;
+}
+.portfolio-page [data-scroll-zoom] {
+  scale: calc(1 + var(--scroll-zoom, 0));
+  will-change: scale;
+}
+.portfolio-page [data-scroll-drift] {
+  translate: 0 calc(var(--scroll-drift, 0) * 1px);
+  will-change: translate;
+}
+
+/* The portrait gains a slow tilt and a light sweep as it passes. */
+.portfolio-page .pf-portrait-frame {
+  transform: perspective(900px) rotateY(calc(var(--scroll-tilt, 0) * 1deg)) rotateX(calc(var(--scroll-tilt, 0) * -.35deg));
+  transition: transform .18s linear;
+  will-change: transform;
+}
+.portfolio-page .pf-portrait-frame::after {
+  position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / .22) 48%, transparent 62%);
+  background-size: 260% 100%;
+  background-position: calc(100% - var(--scroll-sheen, 0) * 100%) 0;
+  content: ""; pointer-events: none; mix-blend-mode: screen;
+}
+
+/* Design gallery: each card lifts and straightens as it enters. */
+.portfolio-page .pf-design-card {
+  transform: translate3d(0, calc(var(--card-lift, 0) * 1px), 0) rotate(calc(var(--card-tilt, 0) * 1deg));
+  transition: transform .2s linear, box-shadow .3s ease, border-color .3s ease;
+  will-change: transform;
+}
+
+/* ---------- 4. Section transitions -------------------------------------- */
+/* Each section fades its own backdrop in, so moving between them feels like
+   a scene change rather than a jump. */
+.portfolio-page .pf-section {
+  --pf-section-glow: 0;
+}
+.portfolio-page .pf-section::after {
+  position: absolute; z-index: -1; inset: -8% -6%;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%, rgb(45 212 160 / .07), transparent 72%);
+  content: ""; pointer-events: none;
+  opacity: var(--pf-section-glow);
+  transition: opacity .8s ease;
+}
+.portfolio-page .pf-section.is-in-view { --pf-section-glow: 1; }
+
+/* A soft seam between sections that brightens as the next one arrives. */
+.portfolio-page .pf-section + .pf-section::before {
+  background: linear-gradient(90deg, transparent, var(--pf-border), rgb(45 212 160 / .48), transparent);
+  opacity: .55;
+}
+
+/* ---------- 5. Interactive polish --------------------------------------- */
+.portfolio-page .pf-btn,
+.portfolio-page .pf-login-button,
+.portfolio-page .pf-nav a,
+.portfolio-page .pf-skill-card,
+.portfolio-page .pf-work-card,
+.portfolio-page .pf-focus-tag,
+.portfolio-page .pf-coursework span {
+  transition:
+    transform .28s cubic-bezier(.2,.75,.25,1),
+    box-shadow .28s ease,
+    border-color .28s ease,
+    background-color .28s ease,
+    color .28s ease;
+}
+
+.portfolio-page .pf-btn:hover,
+.portfolio-page .pf-btn:focus-visible { transform: translateY(-2px); }
+.portfolio-page .pf-btn:active { transform: translateY(0) scale(.985); }
+
+/* A light that tracks the pointer across cards — set by app.js. */
+.portfolio-page .pf-skill-card,
+.portfolio-page .pf-work-card {
+  position: relative;
+  overflow: hidden;
+}
+.portfolio-page .pf-skill-card::after,
+.portfolio-page .pf-work-card::after {
+  position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(220px circle at var(--pointer-x, 50%) var(--pointer-y, 0%), rgb(94 234 212 / .16), transparent 62%);
+  content: ""; pointer-events: none;
+  opacity: 0; transition: opacity .3s ease;
+}
+.portfolio-page .pf-skill-card:hover::after,
+.portfolio-page .pf-work-card:hover::after { opacity: 1; }
+.portfolio-page .pf-skill-card:hover,
+.portfolio-page .pf-work-card:hover { transform: translateY(-4px); }
+
+.portfolio-page .pf-nav a { position: relative; }
+.portfolio-page .pf-nav a::after {
+  position: absolute; left: 0; right: 0; bottom: -6px; height: 1.5px;
+  background: linear-gradient(90deg, var(--pf-accent-2), #38bdf8);
+  content: ""; transform: scaleX(0); transform-origin: left center;
+  transition: transform .3s cubic-bezier(.2,.75,.25,1);
+}
+.portfolio-page .pf-nav a:hover::after,
+.portfolio-page .pf-nav a.is-active::after { transform: scaleX(1); }
+
+/* ---------- 6. Reduced motion ------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .portfolio-page .pf-hero { opacity: 1; transform: none; }
+  .portfolio-page .pf-main::before { display: none; }
+  .portfolio-page [data-scroll-rotate],
+  .portfolio-page [data-scroll-zoom],
+  .portfolio-page [data-scroll-drift] { rotate: none; scale: none; translate: none; }
+  .portfolio-page .pf-portrait-frame { transform: none; }
+  .portfolio-page .pf-portrait-frame::after { display: none; }
+  .portfolio-page .pf-design-card { transform: none; }
+  .portfolio-page .pf-section::after { opacity: 0; }
+  .pf-reveal-ready .pf-section::before { transform: none; }
+  .portfolio-page .pf-skill-card:hover,
+  .portfolio-page .pf-work-card:hover,
+  .portfolio-page .pf-btn:hover { transform: none; }
+}
+
+/* ---------- 7. Small screens -------------------------------------------- */
+@media (max-width: 860px) {
+  /* Depth effects are expensive on phones and read poorly at small sizes. */
+  .portfolio-page .pf-main::before { display: none; }
+  /* The decorative orbs are wider than a phone screen; keep them from
+     creating a horizontal scrollbar. */
+  html:has(.portfolio-page),
+  .portfolio-page { overflow-x: clip; }
+  .portfolio-page .pf-hero-orb { max-width: 100vw; }
+  .portfolio-page .pf-hero { transform: none; opacity: 1; }
+  .portfolio-page .pf-portrait-frame { transform: none; }
+  .portfolio-page .pf-design-card { transform: none; }
+}
