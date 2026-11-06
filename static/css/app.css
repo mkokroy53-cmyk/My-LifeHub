@@ -752,9 +752,16 @@ body.theme-dark .quote-spotlight {
 .navigation-open .immersive-nav-scrim { display: block; animation: nav-scrim-in .2s ease both; }
 .navigation-leaving .main-area { opacity: 0; transform: translateY(6px) scale(.995); filter: blur(2px); transition: opacity .15s ease,transform .15s ease,filter .15s ease; }
 .motion-ready .page-content { animation: nav-page-in .34s cubic-bezier(.2,.75,.25,1) both; }
-.motion-ready [data-reveal] { opacity: 0; transform: translateY(16px); transition: opacity .5s ease var(--reveal-delay,0ms),transform .5s cubic-bezier(.2,.75,.25,1) var(--reveal-delay,0ms); }
-.motion-ready [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
-.motion-ready .library-card[data-reveal],.motion-ready .module-entry-card[data-reveal] { transform: translateY(12px); }
+.motion-ready [data-reveal] {
+  --reveal-offset: 26px;
+  opacity: 0; translate: 0 calc(var(--reveal-offset) + var(--scroll-shift, 0px)); scale: .97; filter: blur(4px);
+  transition:
+    opacity .6s cubic-bezier(.2,.75,.25,1) var(--reveal-delay,0ms),
+    translate .6s cubic-bezier(.2,.75,.25,1) var(--reveal-delay,0ms),
+    scale .6s cubic-bezier(.2,.75,.25,1) var(--reveal-delay,0ms),
+    filter .6s ease var(--reveal-delay,0ms);
+}
+.motion-ready [data-reveal].is-visible { --reveal-offset: 0px; opacity: 1; scale: 1; filter: blur(0); }
 .is-loading { position: relative; pointer-events: none; color: transparent !important; }
 .is-loading::after { position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; color: var(--lime); content: ""; transform: translate(-50%,-50%); animation: spin .7s linear infinite; }
 .toast { transform-origin: top center; animation: toast-in .26s ease-out both; }
@@ -2072,15 +2079,19 @@ body.theme-dark .pf-footer-signin { color: var(--pf-accent); }
 @keyframes pf-modal-in { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes pf-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 
-/* reveal-on-scroll (progressive enhancement) */
-.portfolio-page .pf-section,
-.portfolio-page .pf-skill-card,
-.portfolio-page .pf-work-card { opacity: 1; }
-.pf-reveal-ready .pf-section > * { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(.2,.75,.25,1), transform .7s cubic-bezier(.2,.75,.25,1); }
-.pf-reveal-ready .pf-section.is-visible > * { opacity: 1; transform: translateY(0); }
-.pf-reveal-ready .pf-section.is-visible > *:nth-child(2) { transition-delay: .08s; }
-.pf-reveal-ready .pf-section.is-visible > *:nth-child(3) { transition-delay: .16s; }
-.pf-reveal-ready .pf-section.is-visible > *:nth-child(4) { transition-delay: .24s; }
+/* Scroll reveals are enabled only when the observer can reveal each feature. */
+.pf-reveal-ready .pf-scroll-item {
+  --pf-reveal-offset: 30px;
+  opacity: 0; translate: 0 calc(var(--pf-reveal-offset) + var(--scroll-shift, 0px)); scale: .96; filter: blur(5px);
+  transition:
+    opacity .65s cubic-bezier(.2,.75,.25,1) var(--pf-reveal-delay, 0ms),
+    translate .65s cubic-bezier(.2,.75,.25,1) var(--pf-reveal-delay, 0ms),
+    scale .65s cubic-bezier(.2,.75,.25,1) var(--pf-reveal-delay, 0ms),
+    filter .65s ease var(--pf-reveal-delay, 0ms);
+}
+.pf-reveal-ready .pf-scroll-item.is-visible {
+  --pf-reveal-offset: 0px; opacity: 1; scale: 1; filter: blur(0);
+}
 
 /* =====================================================================
    SIGN-IN OVERLAY
@@ -2182,6 +2193,6 @@ body.theme-dark .login-form input { background: #0c1030; color: var(--pf-heading
 @media (prefers-reduced-motion: reduce) {
   .pf-hero-orb, .pf-portrait-frame, .pf-portrait-badge, .pf-pill i, .pf-badge-live i, .pf-hero-copy h1 em { animation: none; }
   .pf-design-card, .pf-design-image img, .pf-design-zoom { transition: none; }
-  .pf-reveal-ready .pf-section > * { opacity: 1; transform: none; transition: none; }
+  .pf-reveal-ready .pf-scroll-item { --pf-reveal-offset: 0px; opacity: 1; translate: none; scale: 1; filter: none; transition: none; }
   .login-dialog, .login-backdrop { animation: none; }
 }

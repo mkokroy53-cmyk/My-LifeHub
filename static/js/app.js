@@ -145,11 +145,19 @@ immersiveNavigation?.querySelectorAll('.nav-section-links a').forEach((link) => 
 });
 
 const revealTargets = document.querySelectorAll(
-    '.quick-section, .stats-section, .dashboard-block, .quote-panel, .schedule-panel, .library-card, .module-entry-card, .calendar-panel, .recurring-section, .money-summary, .private-file-row, .entry-detail-card'
+    '.quick-section, .stats-section, .dashboard-block, .quote-panel, .schedule-panel, ' +
+    '.library-card, .module-entry-card, .calendar-panel, .recurring-section, .money-summary, ' +
+    '.private-file-row, .entry-detail-card, .welcome-band, .workspace-tile, .stat-card, ' +
+    '.learning-hero, .learning-hub-card, .learning-stat-card, .learning-card, .assignment-card, ' +
+    '.nb-hero, .nb-head, .nb-card, .nb-page-row, .nb-sheet, .class-notebook-hero, ' +
+    '.class-note-page, .project-card, .projects-hero, .projects-stat-card, .diary-hero, ' +
+    '.diary-stat-card, .diary-block, .diary-panel, .diary-pinned-card, .diary-row, ' +
+    '.finance-heading, .finance-ledger, .learning-section-nav'
 );
 
 revealTargets.forEach((element, index) => {
     element.dataset.reveal = '';
+    element.dataset.scrollMotion = '';
     element.style.setProperty('--reveal-delay', `${Math.min(index % 5, 4) * 55}ms`);
 });
 
@@ -157,13 +165,11 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 if (prefersReducedMotion || !('IntersectionObserver' in window)) {
     revealTargets.forEach((element) => element.classList.add('is-visible'));
 } else {
-    const revealObserver = new IntersectionObserver((entries, observer) => {
+    const revealObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
+            entry.target.classList.toggle('is-visible', entry.isIntersecting);
         });
-    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
+    }, { threshold: 0.08, rootMargin: '40px 0px 40px 0px' });
     revealTargets.forEach((element) => revealObserver.observe(element));
 }
 
@@ -256,17 +262,32 @@ function updateScrollTopVisibility() {
     }
 }
 
+function updateScrollMotion() {
+    if (prefersReducedMotion) return;
+    const shifts = [...document.querySelectorAll('[data-scroll-motion]')].map((element) => {
+        const bounds = element.getBoundingClientRect();
+        const relativeCenter = (bounds.top + bounds.height / 2) / window.innerHeight;
+        return [element, Math.max(-8, Math.min(8, (0.5 - relativeCenter) * 16))];
+    });
+    shifts.forEach(([element, shift]) => element.style.setProperty('--scroll-shift', `${shift.toFixed(2)}px`));
+}
+
 let scrollUpdatePending = false;
 window.addEventListener('scroll', () => {
     if (scrollUpdatePending) return;
     scrollUpdatePending = true;
     window.requestAnimationFrame(() => {
         updateScrollTopVisibility();
+        updateScrollMotion();
         scrollUpdatePending = false;
     });
 }, { passive: true });
-window.addEventListener('resize', updateScrollTopVisibility, { passive: true });
+window.addEventListener('resize', () => {
+    updateScrollTopVisibility();
+    updateScrollMotion();
+}, { passive: true });
 updateScrollTopVisibility();
+updateScrollMotion();
 scrollTopButton?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' }));
 
 /* ==========================================================================
@@ -566,43 +587,40 @@ document.querySelectorAll('[data-quote-shuffle]').forEach((button) => {
 })();
 
 /* =====================================================================
-   Public portfolio — reveal sections as they scroll into view
-
-   Content is visible by default; the fade-in is pure enhancement. If the
-   observer never runs, or the browser lacks support, everything simply
-   shows at once. Nothing is ever left hidden.
+   Public portfolio — pop feature cards into view as they scroll
    ===================================================================== */
 (() => {
-    const sections = document.querySelectorAll('.portfolio-page .pf-section');
-    if (!sections.length) return;
-
-    const reveal = (section) => section.classList.add('is-visible');
+    const revealItems = document.querySelectorAll([
+        '.portfolio-page .pf-section-head',
+        '.portfolio-page .pf-about-grid',
+        '.portfolio-page .pf-focus-tag',
+        '.portfolio-page .pf-skill-card',
+        '.portfolio-page .pf-work-card',
+        '.portfolio-page .pf-design-showcase-head',
+        '.portfolio-page .pf-design-card',
+        '.portfolio-page .pf-contact-card',
+    ].join(','));
+    if (!revealItems.length) return;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced || !('IntersectionObserver' in window)) {
-        sections.forEach(reveal);
-        return;
-    }
+    if (reduced || !('IntersectionObserver' in window)) return;
 
-    // Only arm the hidden initial state once we know we can un-hide it.
     document.body.classList.add('pf-reveal-ready');
+    const reveal = (item) => item.classList.add('is-visible');
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-                reveal(entry.target);
-                observer.unobserve(entry.target);
-            }
+            entry.target.classList.toggle('is-visible', entry.isIntersecting);
         });
-    }, { threshold: 0.05, rootMargin: '0px 0px -10% 0px' });
+    }, { threshold: 0.12, rootMargin: '40px 0px 40px 0px' });
 
-    sections.forEach((section) => {
-        // Anything already within (or above) the viewport reveals immediately.
-        const rect = section.getBoundingClientRect();
-        if (rect.top < window.innerHeight) reveal(section);
-        observer.observe(section);
+    revealItems.forEach((item) => {
+        item.classList.add('pf-scroll-item');
+        item.dataset.scrollMotion = '';
+        const siblingIndex = Array.prototype.indexOf.call(item.parentElement.children, item);
+        item.style.setProperty('--pf-reveal-delay', `${Math.min(siblingIndex, 5) * 75}ms`);
+        if (item.getBoundingClientRect().top < window.innerHeight) reveal(item);
+        observer.observe(item);
     });
-
-    // Safety net: if anything is still hidden shortly after load, show it.
-    window.setTimeout(() => sections.forEach(reveal), 1200);
+    updateScrollMotion();
 })();
