@@ -1,0 +1,172 @@
+/* ==========================================================================
+   SIGNED-IN APP — IMMERSIVE SCROLL LAYER
+   The same motion language as the public portfolio, tuned for a working
+   dashboard: calmer, shorter distances, and nothing that competes with the
+   content you are actually reading.
+
+   Everything here is additive. With JavaScript off, or with reduced motion
+   requested, the app renders exactly as it did before.
+   ========================================================================== */
+
+.app-page {
+  --app-depth-1: 0px;
+  --app-depth-2: 0px;
+  --app-band-fade: 0;
+}
+
+/* ---------- 1. Depth ----------------------------------------------------- */
+/* A soft light behind the content that drifts as the page scrolls, so long
+   pages feel like they have space behind them rather than a flat backdrop. */
+.app-page .main-area::before {
+  position: fixed; z-index: 0; inset: 0;
+  background:
+    radial-gradient(ellipse 55vw 38vw at 78% calc(12% + var(--app-depth-2)), rgb(45 212 160 / .10), transparent 70%),
+    radial-gradient(ellipse 48vw 34vw at 12% calc(72% - var(--app-depth-1)), rgb(59 130 246 / .10), transparent 72%);
+  content: ""; pointer-events: none;
+}
+.app-page .page-content { position: relative; z-index: 1; }
+
+/* The welcome band recedes gently as the reader moves into the page. */
+.app-page .welcome-band {
+  transform: translate3d(0, calc(var(--app-band-fade) * -18px), 0) scale(calc(1 - var(--app-band-fade) * .02));
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+/* ---------- 2. Staged reveals ------------------------------------------- */
+/* Replaces the single generic reveal with variants that suit each element. */
+.motion-ready [data-reveal] {
+  --reveal-offset: 24px;
+  --reveal-scale: .975;
+  --reveal-blur: 4px;
+  opacity: 0;
+  translate: 0 var(--reveal-offset);
+  scale: var(--reveal-scale);
+  filter: blur(var(--reveal-blur));
+  transition:
+    opacity .62s cubic-bezier(.2,.75,.25,1) var(--reveal-delay, 0ms),
+    translate .62s cubic-bezier(.2,.75,.25,1) var(--reveal-delay, 0ms),
+    scale .62s cubic-bezier(.2,.75,.25,1) var(--reveal-delay, 0ms),
+    filter .62s ease var(--reveal-delay, 0ms);
+}
+.motion-ready [data-reveal].is-visible {
+  --reveal-offset: 0px; --reveal-scale: 1; --reveal-blur: 0px;
+  opacity: 1;
+}
+
+/* Headings and copy rise a little further, for an editorial feel. */
+.motion-ready [data-reveal].reveal-rise { --reveal-offset: 34px; --reveal-scale: 1; --reveal-blur: 0px; }
+/* Cards and panels settle in from slightly larger. */
+.motion-ready [data-reveal].reveal-zoom { --reveal-offset: 14px; --reveal-scale: .94; --reveal-blur: 0px; }
+/* Rows in a list slide in from the side, so long lists feel like they flow. */
+.motion-ready [data-reveal].reveal-slide { --reveal-offset: 0px; --reveal-scale: 1; --reveal-blur: 0px; translate: -22px 0; }
+.motion-ready [data-reveal].reveal-slide.is-visible { translate: 0 0; }
+
+/* ---------- 3. Scroll-driven transforms --------------------------------- */
+.app-page [data-scroll-drift] {
+  translate: 0 calc(var(--scroll-drift, 0) * 1px);
+  will-change: translate;
+}
+.app-page [data-scroll-zoom] {
+  scale: calc(1 + var(--scroll-zoom, 0));
+  will-change: scale;
+}
+
+/* The welcome band's own light drifts against the scroll, giving the hero a
+   sense of depth without moving the text. */
+.app-page .welcome-band::before {
+  translate: 0 calc(var(--band-drift, 0) * 1px);
+  will-change: translate;
+}
+
+/* ---------- 4. Section transitions -------------------------------------- */
+/* Each major block brightens its own backdrop as it comes into view. */
+.app-page .dashboard-block,
+.app-page .schedule-panel,
+.app-page .quote-panel {
+  position: relative;
+}
+.app-page .dashboard-block::after,
+.app-page .schedule-panel::after,
+.app-page .quote-panel::after {
+  position: absolute; z-index: -1; inset: -10px -14px;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, rgb(45 212 160 / .07), transparent 72%);
+  content: ""; pointer-events: none;
+  opacity: 0; transition: opacity .7s ease;
+}
+.app-page .dashboard-block.is-in-view::after,
+.app-page .schedule-panel.is-in-view::after,
+.app-page .quote-panel.is-in-view::after { opacity: 1; }
+
+/* ---------- 5. Interactive polish --------------------------------------- */
+/* A light that follows the pointer across the main cards. */
+.app-page .stat-card,
+.app-page .library-card,
+.app-page .module-entry-card,
+.app-page .nb-card,
+.app-page .learning-card,
+.app-page .project-card {
+  position: relative;
+  overflow: hidden;
+}
+.app-page .stat-card::after,
+.app-page .library-card::after,
+.app-page .module-entry-card::after,
+.app-page .nb-card::after,
+.app-page .learning-card::after,
+.app-page .project-card::after {
+  position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(200px circle at var(--pointer-x, 50%) var(--pointer-y, 0%), rgb(45 212 160 / .14), transparent 62%);
+  content: ""; pointer-events: none;
+  opacity: 0; transition: opacity .3s ease;
+}
+.app-page .stat-card:hover::after,
+.app-page .library-card:hover::after,
+.app-page .module-entry-card:hover::after,
+.app-page .nb-card:hover::after,
+.app-page .learning-card:hover::after,
+.app-page .project-card:hover::after { opacity: 1; }
+
+/* Buttons and links lift a hair on hover, and settle on press. */
+.app-page .primary-button,
+.app-page .secondary-button,
+.app-page .quick-action,
+.app-page .text-link {
+  transition:
+    transform .24s cubic-bezier(.2,.75,.25,1),
+    box-shadow .24s ease,
+    background-color .24s ease,
+    border-color .24s ease,
+    color .24s ease;
+}
+.app-page .primary-button:hover,
+.app-page .secondary-button:hover,
+.app-page .quick-action:hover { transform: translateY(-2px); }
+.app-page .primary-button:active,
+.app-page .secondary-button:active,
+.app-page .quick-action:active { transform: translateY(0) scale(.99); }
+.app-page .text-link:hover { transform: translateX(2px); }
+
+/* ---------- 6. Reduced motion ------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .app-page .main-area::before { display: none; }
+  .app-page .welcome-band { transform: none; }
+  .app-page .welcome-band::before { translate: none; }
+  .app-page [data-scroll-drift],
+  .app-page [data-scroll-zoom] { translate: none; scale: none; }
+  .app-page .dashboard-block::after,
+  .app-page .schedule-panel::after,
+  .app-page .quote-panel::after { opacity: 0; }
+  .app-page .primary-button:hover,
+  .app-page .secondary-button:hover,
+  .app-page .quick-action:hover,
+  .app-page .text-link:hover { transform: none; }
+}
+
+/* ---------- 7. Small screens -------------------------------------------- */
+@media (max-width: 860px) {
+  /* Depth effects are costly on phones and barely visible at that size. */
+  .app-page .main-area::before { display: none; }
+  .app-page .welcome-band { transform: none; }
+}

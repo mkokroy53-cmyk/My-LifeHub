@@ -164,8 +164,19 @@ const revealTargets = document.querySelectorAll(
     '.finance-heading, .finance-ledger, .learning-section-nav'
 );
 
+// Each element gets the motion that suits its role, so a page never reveals
+// as one uniform block.
+const revealVariantFor = (element) => {
+    if (element.matches('.welcome-band, .learning-hero, .projects-hero, .diary-hero, .nb-hero, .nb-head, .finance-heading, .class-notebook-hero')) return 'reveal-rise';
+    if (element.matches('.stat-card, .library-card, .nb-card, .learning-card, .learning-stat-card, .projects-stat-card, .diary-stat-card, .project-card, .workspace-tile, .assignment-card, .diary-pinned-card')) return 'reveal-zoom';
+    if (element.matches('.module-entry-card, .private-file-row, .diary-row, .nb-page-row, .activity-row')) return 'reveal-slide';
+    return '';
+};
+
 revealTargets.forEach((element, index) => {
     element.dataset.reveal = '';
+    const variant = revealVariantFor(element);
+    if (variant) element.classList.add(variant);
     element.style.setProperty('--reveal-delay', `${Math.min(index % 5, 4) * 55}ms`);
 });
 
@@ -766,6 +777,85 @@ document.querySelectorAll('[data-quote-shuffle]').forEach((button) => {
     // Pointer-tracked light on cards. Cheap: one listener per card, and the
     // values are only written while the pointer is actually over it.
     page.querySelectorAll('.pf-skill-card, .pf-work-card').forEach((card) => {
+        card.addEventListener('pointermove', (event) => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty('--pointer-x', `${event.clientX - rect.left}px`);
+            card.style.setProperty('--pointer-y', `${event.clientY - rect.top}px`);
+        }, { passive: true });
+    });
+})();
+
+/* =====================================================================
+   SIGNED-IN APP — SCROLL ENGINE
+   The dashboard counterpart to the portfolio engine: one rAF loop drives
+   the ambient depth, the welcome-band hand-off, and the section scene
+   changes. It only runs on the signed-in shell, and it stays completely
+   inert when the visitor prefers reduced motion.
+   ===================================================================== */
+(() => {
+    const shell = document.querySelector('.app-page');
+    if (!shell || shell.classList.contains('portfolio-page')) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+
+    const band = shell.querySelector('.welcome-band');
+    const sceneBlocks = [...shell.querySelectorAll('.dashboard-block, .schedule-panel, .quote-panel')];
+    const driftTargets = [...shell.querySelectorAll('[data-scroll-drift]')];
+    const zoomTargets = [...shell.querySelectorAll('[data-scroll-zoom]')];
+
+    const progressOf = (element) => {
+        const rect = element.getBoundingClientRect();
+        const span = window.innerHeight + rect.height;
+        if (span <= 0) return 0;
+        return Math.min(1, Math.max(0, (window.innerHeight - rect.top) / span));
+    };
+    const centredOf = (element) => progressOf(element) * 2 - 1;
+
+    let frame = 0;
+    const render = () => {
+        frame = 0;
+        const viewport = window.innerHeight;
+
+        // The welcome band recedes as the reader moves past it.
+        if (band) {
+            const travelled = Math.min(1, Math.max(0, window.scrollY / Math.max(band.offsetHeight * 0.85, 1)));
+            shell.style.setProperty('--app-band-fade', travelled.toFixed(3));
+            band.style.setProperty('--band-drift', (travelled * 26).toFixed(1));
+        }
+
+        // Ambient depth behind the content.
+        shell.style.setProperty('--app-depth-1', `${(window.scrollY * 0.05).toFixed(1)}px`);
+        shell.style.setProperty('--app-depth-2', `${(window.scrollY * 0.1).toFixed(1)}px`);
+
+        driftTargets.forEach((element) => {
+            const amount = Number(element.dataset.scrollDrift) || 0;
+            element.style.setProperty('--scroll-drift', (centredOf(element) * amount).toFixed(1));
+        });
+        zoomTargets.forEach((element) => {
+            const amount = Number(element.dataset.scrollZoom) || 0;
+            element.style.setProperty('--scroll-zoom', (centredOf(element) * amount).toFixed(3));
+        });
+
+        // A block is "in view" while it occupies the middle of the screen.
+        sceneBlocks.forEach((block) => {
+            const rect = block.getBoundingClientRect();
+            block.classList.toggle('is-in-view', rect.top < viewport * 0.8 && rect.bottom > viewport * 0.2);
+        });
+    };
+
+    const schedule = () => {
+        if (frame) return;
+        frame = window.requestAnimationFrame(render);
+    };
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('load', schedule);
+    render();
+
+    // Pointer-tracked light on the main cards.
+    shell.querySelectorAll('.stat-card, .library-card, .module-entry-card, .nb-card, .learning-card, .project-card').forEach((card) => {
         card.addEventListener('pointermove', (event) => {
             const rect = card.getBoundingClientRect();
             card.style.setProperty('--pointer-x', `${event.clientX - rect.left}px`);

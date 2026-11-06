@@ -75,6 +75,16 @@ The dashboard captures now have dedicated private archive modules, full record e
 - Performance: one `requestAnimationFrame` loop for all scroll effects, passive listeners, and depth effects disabled on small screens.
 - Reduced motion is fully respected — the reveal system never arms, and all scroll transforms are switched off.
 
+## Phase 10 immersive signed-in experience
+
+- The same motion language now runs inside the signed-in app (`static/css/app-motion.css` plus the app scroll engine in `static/js/app.js`), tuned to be calmer so it never competes with the content you are working in.
+- Reveal variants: page heroes rise, cards and stat tiles zoom in, and list rows slide in from the side — all staggered by position.
+- Ambient depth behind the content, the welcome band receding as you scroll past it, and drifting decorative shapes.
+- Section scene changes: dashboard blocks, the schedule panel, and the quote panel fade in their own glow as they enter view.
+- Interactive polish: pointer-tracked light on cards, and hover/active lifts on buttons and links.
+- Performance: one animation-frame loop, passive listeners, and depth effects disabled below 860px.
+- Reduced motion is fully respected — no transforms, no glows, and reveals are shown immediately.
+
 ## Technology
 
 - Python 3.13 (Python 3.11 or later recommended)

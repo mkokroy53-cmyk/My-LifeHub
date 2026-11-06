@@ -2,14 +2,14 @@
 {% load static %}
 {% block title %}Overview · My-LifeHub{% endblock %}
 {% block content %}
-<section class="welcome-band">
+<section class="welcome-band" data-parallax="0.025">
     <div class="welcome-copy">
         <span class="eyebrow eyebrow-light"><i></i> YOUR SPACE, YOUR PACE</span>
         <h1>{{ greeting }},<br><em>{{ user.first_name|default:user.username }}.</em></h1>
         <p>A little room to gather the things that matter.</p>
     </div>
     <div class="welcome-date" data-current-date><span class="date-kicker">TODAY IS</span><strong>{{ today|date:"j" }}</strong><span>{{ today|date:"F Y" }}</span><i class="date-rule"></i><small>{{ today|date:"l" }}</small></div>
-    <span class="welcome-shape shape-ring" aria-hidden="true"></span><span class="welcome-shape shape-sun" aria-hidden="true"></span>
+    <span class="welcome-shape shape-ring" data-scroll-drift="-18" aria-hidden="true"></span><span class="welcome-shape shape-sun" data-scroll-drift="14" aria-hidden="true"></span>
 </section>
 
 <!-- QUOTE OF THE DAY — placed just before the portfolio -->
